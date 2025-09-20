@@ -1,0 +1,4 @@
+# The new test vectors are saved at dataset/testVectors
+octave ./sw-test/mix_signals/mix_sig.m
+echo "Generated test vectors : dataset/testVectors/"
+echo "Each channel : 50 vectors, 1024 samples each"

@@ -1,0 +1,6 @@
+# Simulate
+if [ "$1" = "compile" ]; then
+  make run -f ./sim/icarus/Makefile
+elif [ "$1" = "wave" ]; then
+  make wave -f ./sim/icarus/Makefile
+fi
