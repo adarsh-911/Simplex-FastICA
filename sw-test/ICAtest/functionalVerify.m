@@ -1,0 +1,87 @@
+%% Minimal Fast ICA demo with EMG signals
+% Parameters: d = mixed observations, r = independent components, frame_size = samples per frame
+% Loads EMG data, mixes signals, performs centering and whitening, writes hex files, plots results
+
+rng(42);
+
+d = 5;
+r = 5;
+frame_size = 1024;
+
+emg_files = {'EMG_signalX_Wrist_Sup.txt', 'EMG_signalX_Wrist_Pro.txt', ...
+             'EMG_signalX_no_movement.txt', 'EMG_signalX_HO.txt', 'EMG_signalX_HC.txt'};
+
+Ztrue = [];
+for i = 1:min(r, length(emg_files))
+    data = load(emg_files{i});
+    if i == 1, Ztrue = zeros(r, length(data)); end
+    Ztrue(i,:) = data';
+end
+
+num_frames = floor(size(Ztrue,2) / frame_size);
+
+A = randomMixingMatrix(d, r);
+
+idx1 = 1:frame_size;
+Ztrue_frame1 = Ztrue(:, idx1);
+Zmixed_frame1 = A * Ztrue_frame1;
+[Zc_frame1, ~] = centerRows(Zmixed_frame1);
+[Zwhite_frame1, ~] = whitenRows(Zc_frame1);
+Zfica_frame1 = fastICA(Zwhite_frame1, r);
+
+for frame = 1:num_frames
+    idx = (frame-1)*frame_size + (1:frame_size);
+    
+    Zmixed = A * Ztrue(:, idx);
+    [Zc, ~] = centerRows(Zmixed);
+    [Zwhite, ~] = whitenRows(Zc);
+    
+    % normalisation
+    data_hex = uint32(round((Zwhite / max(abs(Zwhite(:)))) * 2147483647) + 2147483648);
+    fid = fopen(sprintf('frame_%d.hex', frame), 'w');
+    [~, n] = size(Zwhite);
+    for i = 1:n
+        hex_format = repmat('%08X ', 1, d);
+        fprintf(fid, [hex_format(1:end-1) '\n'], data_hex(:,i));
+    end
+    fclose(fid);
+end
+
+fprintf('Processed %d frames, wrote hex files 1-%d\n', num_frames, num_frames);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Plotting starts from here
+cm = hsv(max([d, r]));
+
+figure('Name', 'ICA on EMG Signals (Frame 1)');
+
+subplot(4,1,1);
+for i = 1:r
+    plot(Ztrue_frame1(i,:), '-', 'Color', cm(i,:)); hold on;
+end
+title(sprintf('True EMG Signals (Sources) - %d signals', r));
+axis tight;
+if r <= 5
+    legend({'Wrist Sup', 'Wrist Pro', 'No Move', 'Hand Open', 'Hand Close'}, 'Location', 'northeast');
+end
+
+subplot(4,1,2);
+for i = 1:d
+    plot(Zmixed_frame1(i,:), '-', 'Color', cm(i,:)); hold on;
+end
+title(sprintf('Observed Mixed Signals - %d channels', d));
+axis tight;
+
+subplot(4,1,3);
+for i = 1:d
+    plot(Zwhite_frame1(i,:), '-', 'Color', cm(i,:)); hold on;
+end
+title(sprintf('Whitened Signals (Pre-ICA) - %d channels', d));
+axis tight;
+
+subplot(4,1,4);
+for i = 1:r
+    plot(Zfica_frame1(i,:), '-', 'Color', cm(i,:)); hold on;
+end
+title(sprintf('Recovered Independent Components [Fast ICA] - %d components', r));
+axis tight;
