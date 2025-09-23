@@ -8,7 +8,7 @@ module CONTROL_MUX_CORDIC #(
   input en,
   input nrst,
 
-  input [1:0] block, // Current working block
+  input [2:0] block, // Current working block
 
   // GSO BLOCK
   input gso_cordic_vec_en,
@@ -78,6 +78,40 @@ module CONTROL_MUX_CORDIC #(
   input est_cordic_rot_microRot_ext_vld,
   input est_cordic_nrst,
 
+  // CONVERGENCE BLOCK
+  input conv_cordic_vec_en,
+  input conv_cordic_rot_en,
+
+  input signed [DATA_WIDTH-1:0] conv_cordic_vec_xin,
+  input signed [DATA_WIDTH-1:0] conv_cordic_vec_yin,
+  input conv_cordic_vec_angle_calc_en,
+
+  input [1:0] conv_cordic_rot_quad_in,
+  input signed [DATA_WIDTH-1:0] conv_cordic_rot_xin,
+  input signed [DATA_WIDTH-1:0] conv_cordic_rot_yin,
+  input signed [ANGLE_WIDTH-1:0] conv_cordic_rot_angle_in,
+  input [CORDIC_STAGES-1:0] conv_cordic_rot_microRot_ext_in,
+  input conv_cordic_rot_angle_microRot_n,
+  input conv_cordic_rot_microRot_ext_vld,
+  input conv_cordic_nrst,
+
+  // THETA CALC BLOCK
+  input theta_cordic_vec_en,
+  input theta_cordic_rot_en,
+
+  input signed [DATA_WIDTH-1:0] theta_cordic_vec_xin,
+  input signed [DATA_WIDTH-1:0] theta_cordic_vec_yin,
+  input theta_cordic_vec_angle_calc_en,
+
+  input [1:0] theta_cordic_rot_quad_in,
+  input signed [DATA_WIDTH-1:0] theta_cordic_rot_xin,
+  input signed [DATA_WIDTH-1:0] theta_cordic_rot_yin,
+  input signed [ANGLE_WIDTH-1:0] theta_cordic_rot_angle_in,
+  input [CORDIC_STAGES-1:0] theta_cordic_rot_microRot_ext_in,
+  input theta_cordic_rot_angle_microRot_n,
+  input theta_cordic_rot_microRot_ext_vld,
+  input theta_cordic_nrst,
+
   // OUTPUT TO CORDIC
   output reg cordic_vec_en,
   output reg cordic_rot_en,
@@ -116,7 +150,7 @@ always @(*) begin
 
   else if (en) begin
     case (block)
-      2'b00 : begin
+      3'b000 : begin
         // GSO CORDIC
         cordic_vec_en <= gso_cordic_vec_en;
         cordic_rot_en <= gso_cordic_rot_en;
@@ -133,7 +167,7 @@ always @(*) begin
         nreset <= gso_cordic_nrst;
       end
 
-      2'b01 : begin
+      3'b001 : begin
         // NORMALIZATION CORDIC
         cordic_vec_en <= norm_cordic_vec_en;
         cordic_rot_en <= norm_cordic_rot_en;
@@ -150,7 +184,7 @@ always @(*) begin
         nreset <= norm_cordic_nrst;
       end
 
-      2'b10 : begin
+      3'b010 : begin
         // UPDATE CORDIC
         cordic_vec_en <= updt_cordic_vec_en;
         cordic_rot_en <= updt_cordic_rot_en;
@@ -167,7 +201,7 @@ always @(*) begin
         nreset <= updt_cordic_nrst;
       end
 
-      2'b11 : begin
+      3'b011 : begin
         // ESTIMATION CORDIC
         cordic_vec_en <= est_cordic_vec_en;
         cordic_rot_en <= est_cordic_rot_en;
@@ -182,6 +216,40 @@ always @(*) begin
         cordic_rot_angle_microRot_n <= est_cordic_rot_angle_microRot_n;
         cordic_rot_microRot_ext_vld <= est_cordic_rot_microRot_ext_vld;
         nreset <= est_cordic_nrst;
+      end
+
+      3'b100 : begin
+        // CONVERGENCE CORDIC
+        cordic_vec_en <= conv_cordic_vec_en;
+        cordic_rot_en <= conv_cordic_rot_en;
+        cordic_vec_xin <= conv_cordic_vec_xin;
+        cordic_vec_yin <= conv_cordic_vec_yin;
+        cordic_vec_angle_calc_en <= conv_cordic_vec_angle_calc_en;
+        cordic_rot_quad_in <= conv_cordic_rot_quad_in;
+        cordic_rot_xin <= conv_cordic_rot_xin;
+        cordic_rot_yin <= conv_cordic_rot_yin;
+        cordic_rot_angle_in <= conv_cordic_rot_angle_in;
+        cordic_rot_microRot_ext_in <= conv_cordic_rot_microRot_ext_in;
+        cordic_rot_angle_microRot_n <= conv_cordic_rot_angle_microRot_n;
+        cordic_rot_microRot_ext_vld <= conv_cordic_rot_microRot_ext_vld;
+        nreset <= conv_cordic_nrst;
+      end
+
+      3'b101 : begin
+        // THETA CORDIC
+        cordic_vec_en <= theta_cordic_vec_en;
+        cordic_rot_en <= theta_cordic_rot_en;
+        cordic_vec_xin <= theta_cordic_vec_xin;
+        cordic_vec_yin <= theta_cordic_vec_yin;
+        cordic_vec_angle_calc_en <= theta_cordic_vec_angle_calc_en;
+        cordic_rot_quad_in <= theta_cordic_rot_quad_in;
+        cordic_rot_xin <= theta_cordic_rot_xin;
+        cordic_rot_yin <= theta_cordic_rot_yin;
+        cordic_rot_angle_in <= theta_cordic_rot_angle_in;
+        cordic_rot_microRot_ext_in <= theta_cordic_rot_microRot_ext_in;
+        cordic_rot_angle_microRot_n <= theta_cordic_rot_angle_microRot_n;
+        cordic_rot_microRot_ext_vld <= theta_cordic_rot_microRot_ext_vld;
+        nreset <= theta_cordic_nrst;
       end
     endcase
   end
