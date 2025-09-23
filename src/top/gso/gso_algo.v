@@ -54,37 +54,12 @@ module gso_top #(
     reg signed [DATA_WIDTH-1:0] R_x_pc [0:K_VECTORS-2];
     reg signed [DATA_WIDTH-1:0] R_y_pc [0:K_VECTORS-2];
     reg signed [DATA_WIDTH-1:0] temp_sub;
-    // inputs
-    //wire signed [DATA_WIDTH-1:0] cordic_rot_xout, cordic_rot_yout;
-    //output
-    //reg cordic_rot_en;
-    //reg signed [DATA_WIDTH-1:0] cordic_rot_xin_reg, cordic_rot_yin_reg;
-    //reg signed [ANGLE_WIDTH-1:0] cordic_rot_angle_in_reg;
-    // input
-    //wire cordic_rot_opvld;
+    
     integer i, j;
     
     assign cordic_rot_angle_microRot_n = 1'b1;
     assign cordic_rot_microRot_ext_vld = 1'b1;
     assign cordic_rot_quad_in = 2'b00;
-
- 
-   /* CORDIC_doubly_pipe_top #(
-        .DATA_WIDTH(DATA_WIDTH), .CORDIC_WIDTH(CORDIC_WIDTH),
-        .ANGLE_WIDTH(ANGLE_WIDTH), .CORDIC_STAGES(CORDIC_STAGES)
-    ) CORDIC_inst (
-        .clk(clk), .nreset(rst_n),
-        .cordic_vec_en(1'b0), .cordic_vec_xin(0), .cordic_vec_yin(0), .cordic_vec_angle_calc_en(1'b0),
-        
-        .cordic_rot_en(cordic_rot_en), .cordic_rot_xin(cordic_rot_xin_reg), .cordic_rot_yin(cordic_rot_yin_reg),
-        .cordic_rot_angle_microRot_n(1'b1), .cordic_rot_angle_in(cordic_rot_angle_in_reg),
-        .cordic_rot_microRot_ext_in(0),
-        .cordic_rot_microRot_ext_vld(1'b1), 
-        .cordic_rot_quad_in(2'b00),      
-         
-        .cordic_vec_opvld(), .cordic_vec_xout(), .vec_quad(), .vec_angle_out(), .vec_microRot_dir(), .vec_microRot_out_start(),
-        .cordic_rot_opvld(cordic_rot_opvld), .cordic_rot_xout(cordic_rot_xout), .cordic_rot_yout(cordic_rot_yout)
-    ); */
 
     // FSM State Transition Logic
     always @(posedge clk or negedge rst_n) begin
