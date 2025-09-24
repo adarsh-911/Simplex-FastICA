@@ -69,15 +69,15 @@ module gso_top_tb;
         .clk(clk),
         .nreset(rst_n),
         .cordic_vec_en(1'b0),
-        .cordic_vec_xin(0), 
-        .cordic_vec_yin(0), 
+        .cordic_vec_xin(16'b0), 
+        .cordic_vec_yin(16'b0), 
         .cordic_vec_angle_calc_en(1'b0),
         .cordic_rot_en(cordic_rot_en),
         .cordic_rot_xin(cordic_rot_xin_reg),
         .cordic_rot_yin(cordic_rot_yin_reg),
         .cordic_rot_angle_microRot_n(cordic_rot_angle_microRot_n),
         .cordic_rot_angle_in(cordic_rot_angle_in_reg),
-        .cordic_rot_microRot_ext_in(0),
+        .cordic_rot_microRot_ext_in(16'b0),
         .cordic_rot_microRot_ext_vld(cordic_rot_microRot_ext_vld),
         .cordic_rot_quad_in(cordic_rot_quad_in),
         .cordic_vec_opvld(), .cordic_vec_xout(), .vec_quad(), .vec_angle_out(), .vec_microRot_dir(), .vec_microRot_out_start(),
@@ -130,5 +130,11 @@ module gso_top_tb;
         #100;
         $finish;
     end
+
+
+  initial begin
+    $dumpfile("build/sim/icarus/dump.vcd");
+    $dumpvars(0, gso_top_tb);
+  end
 
 endmodule

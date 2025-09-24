@@ -6,6 +6,9 @@ module sica_top#(
     parameter SAMPLES         = 1024,
     parameter MAX_ITERATIONS  = 100,
 
+    parameter FRAC_WIDTH = 20,
+    parameter LOGM = 10,
+
     // CORDIC Parameters
     parameter CORDIC_WIDTH    = 22,
     parameter ANGLE_WIDTH     = 16,
@@ -19,10 +22,11 @@ module sica_top#(
     // Serial Input from EMD block
     input signed [DATA_WIDTH-1:0] serial_z_in,
     input serial_z_valid,
+    input load_data,
 
     // Final Status Outputs
     output reg sica_complete,
-    output signed [DATA_WIDTH*DIM*SAMPLES-1:0] s_est
+    output reg signed [DATA_WIDTH*DIM*SAMPLES-1:0] s_est
 );
 
     localparam THRESHOLD = (1 << 5);
@@ -72,7 +76,7 @@ module sica_top#(
     reg norm_diff;
 
     // Data wires between blocks
-    wire signed [DATA_WIDTH*DIM*SAMPLES-1:0] s_est;
+    //wire signed [DATA_WIDTH*DIM*SAMPLES-1:0] s_est;
     reg [0:DATA_WIDTH*DIM*SAMPLES-1] z_in;
     reg [0:ANGLE_WIDTH*(DIM-1)-1] thetas;
     reg done_load;
@@ -82,7 +86,8 @@ module sica_top#(
         //Mux
         reg mux_en, mux_nrst;
         reg [2:0] cordic_input_mux_block;
-        reg gso_cordic_vec_en, gso_cordic_rot_en, gso_cordic_vec_xin, gso_cordic_vec_yin, gso_cordic_vec_angle_calc_en, gso_cordic_rot_quad_in, gso_cordic_rot_xin, gso_cordic_rot_yin, gso_cordic_rot_angle_in, gso_cordic_rot_microRot_ext_in, gso_cordic_rot_angle_microRot_n, gso_cordic_rot_microRot_ext_vld, gso_cordic_nrst;
+        reg gso_cordic_vec_en, gso_cordic_rot_en;
+        reg [DATA_WIDTH-1:0] gso_cordic_vec_xin, gso_cordic_vec_yin, gso_cordic_vec_angle_calc_en, gso_cordic_rot_quad_in, gso_cordic_rot_xin, gso_cordic_rot_yin, gso_cordic_rot_angle_in, gso_cordic_rot_microRot_ext_in, gso_cordic_rot_angle_microRot_n, gso_cordic_rot_microRot_ext_vld, gso_cordic_nrst;
         reg norm_cordic_vec_en, norm_cordic_rot_en, norm_cordic_vec_xin, norm_cordic_vec_yin, norm_cordic_vec_angle_calc_en, norm_cordic_rot_quad_in, norm_cordic_rot_xin, norm_cordic_rot_yin, norm_cordic_rot_angle_in, norm_cordic_rot_microRot_ext_in, norm_cordic_rot_angle_microRot_n, norm_cordic_rot_microRot_ext_vld, norm_cordic_nrst;
         reg est_cordic_vec_en, est_cordic_rot_en, est_cordic_vec_xin, est_cordic_vec_yin, est_cordic_vec_angle_calc_en, est_cordic_rot_quad_in, est_cordic_rot_xin, est_cordic_rot_yin, est_cordic_rot_angle_in, est_cordic_rot_microRot_ext_in, est_cordic_rot_angle_microRot_n, est_cordic_rot_microRot_ext_vld, est_cordic_nrst;
         reg updt_cordic_vec_en, updt_cordic_rot_en, updt_cordic_vec_xin, updt_cordic_vec_yin, updt_cordic_vec_angle_calc_en, updt_cordic_rot_quad_in, updt_cordic_rot_xin, updt_cordic_rot_yin, updt_cordic_rot_angle_in, updt_cordic_rot_microRot_ext_in, updt_cordic_rot_angle_microRot_n, updt_cordic_rot_microRot_ext_vld, updt_cordic_nrst;
@@ -486,7 +491,7 @@ module sica_top#(
             case (state)
                 S_IDLE: if (sica_start) state <= S_LOAD_DATA;
                 S_LOAD_DATA: begin
-                    if (serial_z_valid) begin
+                    if (serial_z_valid && load_data) begin
                         if (done_load) state <= S_INIT_K;
                         else begin 
                             z_in[(load_count)*DATA_WIDTH +: DATA_WIDTH] <= serial_z_in;

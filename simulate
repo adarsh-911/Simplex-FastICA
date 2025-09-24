@@ -1,6 +1,14 @@
 # Simulate
 if [ "$1" = "compile" ]; then
   make run -f ./sim/icarus/Makefile
+elif [ "$1" = "est" ]; then
+  make compile_est -f ./sim/icarus/Makefile
+elif [ "$1" = "norm" ]; then
+  make compile_norm -f ./sim/icarus/Makefile
+elif [ "$1" = "update" ]; then
+  make compile_update -f ./sim/icarus/Makefile
+elif [ "$1" = "gso" ]; then
+  make compile_gso -f ./sim/icarus/Makefile
 elif [ "$1" = "wave" ]; then
   make wave -f ./sim/icarus/Makefile
 fi
