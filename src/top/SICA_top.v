@@ -95,7 +95,10 @@ module sica_top#(
         reg cordic_nrst, cordic_vec_opvld, cordic_vec_xout,vec_quad,vec_angle_out,vec_microRot_dir,vec_microRot_out_start,cordic_rot_opvld, cordic_rot_xout, cordic_rot_yout;
         
         //GSO
-        reg kin, thetas_in_flat;
+        reg [2:0]kin;
+        //Theta block
+        reg [ANGLE_WIDTH*(DIM-1)*(DIM-1)-1:0] thetas_in_flat;
+        reg [DATA_WIDTH-1:0]xf, theta_xout, theta_yout;
     //Instantiating modules
     CONTROL_MUX_CORDIC #(
         .DATA_WIDTH(DATA_WIDTH),
@@ -434,7 +437,27 @@ module sica_top#(
     );
 
     //THETA BLOCK
-
+    sequential_cordic_processor#(
+        .DATA_WIDTH(DATA_WIDTH),
+        .ANGLE_WIDTH(ANGLE_WIDTH),
+        .N_DIM(DIM),
+        .CORDIC_WIDTH(CORDIC_WIDTH),
+        .CORDIC_STAGES(CORDIC_STAGES)
+    ) theta_inst(
+        .clk(clk),
+        .nreset(theta_nrst),
+        .start(theta_en),
+        .w_in_flat(w_curr),
+        .cordic_xout(xf), //CHECK
+        .cordic_angle_out(cordic_vec_angle_out),
+        .cordic_op_vld(cordic_vec_opvld),
+        .cordic_nrst(cordic_nrst),
+        .cordic_en(theta_cordic_vec_en),
+        .cordic_xin(theta_cordic_vec_xin),
+        .cordic_yin(theta_cordic_vec_yin),
+        .theta_out(theta_out),
+        .done(theta_done)
+    );
 
     always @(posedge clk) begin
         if (!nreset) begin
@@ -444,7 +467,7 @@ module sica_top#(
             w_curr <= {(DATA_WIDTH*DIM){1'b0}};
             load_count <= {(SAMPLES*DIM){1'b0}};
             done_load <= 0;
-
+            thetas_in_flat <= {(ANGLE_WIDTH*(DIM-1)*(DIM-1)){1'b0}};
             w_mat <= {(DATA_WIDTH*DIM*DIM){1'b0}}; // Initial guess
 
             cordic_input_mux_block <= 0;
@@ -562,9 +585,9 @@ module sica_top#(
                     theta_nrst <= 1;
                     cordic_input_mux_block <= 3'b101;
                     if (theta_done) begin
+                        xf <= theta_xout;
                         thetas <= theta_out;
                         theta_en <= 0;
-
                         state <= S_FINISH_K;
                     end
 
@@ -574,6 +597,7 @@ module sica_top#(
                     for (i = 0 ; i < DIM ; i = i + 1) begin
                         w_mat[(i*DIM + k_idx)*DATA_WIDTH +: DATA_WIDTH] <= w_curr[(i*DATA_WIDTH) +: DATA_WIDTH];
                     end
+                    thetas_in_flat[ANGLE_WIDTH*(DIM-1)*(k_idx) +: ANGLE_WIDTH*(DIM-1)] <= thetas;
                     k_idx <= k_idx + 1;
                     conv_nrst <= 0;
                     theta_nrst <= 0;
