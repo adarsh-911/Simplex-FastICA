@@ -8,8 +8,8 @@ d = 5;
 r = 5;
 frame_size = 1024;
 
-emg_files = {'EMG_signalX_Wrist_Sup.txt', 'EMG_signalX_Wrist_Pro.txt', ...
-             'EMG_signalX_no_movement.txt', 'EMG_signalX_HO.txt', 'EMG_signalX_HC.txt'};
+emg_files = {'../../dataset/emg_txtfiles/EMG_signalX_Wrist_Sup.txt', '../../dataset/emg_txtfiles/EMG_signalX_Wrist_Pro.txt', ...
+             '../../dataset/emg_txtfiles/EMG_signalX_no_movement.txt', '../../dataset/emg_txtfiles/EMG_signalX_HO.txt', '../../dataset/emg_txtfiles/EMG_signalX_HC.txt'};
 
 Ztrue = [];
 for i = 1:min(r, length(emg_files))
@@ -50,38 +50,54 @@ end
 fprintf('Processed %d frames, wrote hex files 1-%d\n', num_frames, num_frames);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Plotting starts from here
+% Plotting starts from here - Individual plots
 cm = hsv(max([d, r]));
 
-figure('Name', 'ICA on EMG Signals (Frame 1)');
+figure('Name', 'ICA on EMG Signals (Frame 1)', 'Position', [100, 100, 1200, 800]);
 
-subplot(4,1,1);
+% True EMG Signals (Sources) - Individual subplots
+signal_names = {'Wrist Sup', 'Wrist Pro', 'No Move', 'Hand Open', 'Hand Close'};
 for i = 1:r
-    plot(Ztrue_frame1(i,:), '-', 'Color', cm(i,:)); hold on;
-end
-title(sprintf('True EMG Signals (Sources) - %d signals', r));
-axis tight;
-if r <= 5
-    legend({'Wrist Sup', 'Wrist Pro', 'No Move', 'Hand Open', 'Hand Close'}, 'Location', 'northeast');
+    subplot(3, r, i);
+    plot(Ztrue_frame1(i,:), '-', 'Color', cm(i,:), 'LineWidth', 1.5);
+    title(sprintf('Source %d: %s', i, signal_names{min(i, length(signal_names))}));
+    xlabel('Sample');
+    ylabel('Amplitude');
+    axis tight;
+    grid on;
 end
 
-subplot(4,1,2);
+% Mixed Signals - Individual subplots
 for i = 1:d
-    plot(Zmixed_frame1(i,:), '-', 'Color', cm(i,:)); hold on;
+    subplot(3, d, d + i);
+    plot(Zmixed_frame1(i,:), '-', 'Color', cm(i,:), 'LineWidth', 1.5);
+    title(sprintf('Mixed Signal %d', i));
+    xlabel('Sample');
+    ylabel('Amplitude');
+    axis tight;
+    grid on;
 end
-title(sprintf('Observed Mixed Signals - %d channels', d));
-axis tight;
 
-subplot(4,1,3);
-for i = 1:d
-    plot(Zwhite_frame1(i,:), '-', 'Color', cm(i,:)); hold on;
-end
-title(sprintf('Whitened Signals (Pre-ICA) - %d channels', d));
-axis tight;
-
-subplot(4,1,4);
+% Recovered Independent Components - Individual subplots
 for i = 1:r
-    plot(Zfica_frame1(i,:), '-', 'Color', cm(i,:)); hold on;
+    subplot(3, r, 2*r + i);
+    plot(Zfica_frame1(i,:), '-', 'Color', cm(i,:), 'LineWidth', 1.5);
+    title(sprintf('ICA Component %d', i));
+    xlabel('Sample');
+    ylabel('Amplitude');
+    axis tight;
+    grid on;
 end
-title(sprintf('Recovered Independent Components [Fast ICA] - %d components', r));
-axis tight;
+
+% Add main title
+sgtitle('EMG Signal Processing: Original Sources, Mixed Signals, and ICA Recovery', 'FontSize', 14, 'FontWeight', 'bold');
+
+% Adjust spacing between subplots
+subplot_spacing = 0.05;
+for i = 1:3*r
+    sp = subplot(3, r, i);
+    pos = get(sp, 'Position');
+    pos(3) = pos(3) * 0.9;  
+    pos(4) = pos(4) * 0.8;  
+    set(sp, 'Position', pos);
+end
