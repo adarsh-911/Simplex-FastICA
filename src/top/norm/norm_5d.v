@@ -17,13 +17,13 @@ module norm_5d #(
     output reg ica_cordic_vec_en,
     output reg signed [DATA_WIDTH-1:0] ica_cordic_vec_xin,
     output reg signed [DATA_WIDTH-1:0] ica_cordic_vec_yin,
-    output reg ica_cordic_vec_angle_calc_en,        // Enable total angle calculation from the micro-angles
+    output reg ica_cordic_vec_angle_calc_en,                      // Enable total angle calculation from the micro-angles
     
     output reg ica_cordic_rot1_en,
     output reg signed [DATA_WIDTH-1:0] ica_cordic_rot1_xin,
-    output reg signed [DATA_WIDTH-1:0] ica_cordic_rot1_yin,                           // low = micro rotations are given , high = rotation angle given directly
-    output reg [CORDIC_STAGES-1:0] ica_cordic_rot1_microRot_in,              // External micro rotation input for CORDIC-1 Rotation
-    output reg ica_cordic_rot1_microRot_ext_vld,                                 // If HIGH => Micro-rotations are given from outside; LOW => Directly from Vectoring (Need to be assigned properly in testbench)
+    output reg signed [DATA_WIDTH-1:0] ica_cordic_rot1_yin,       // low = micro rotations are given , high = rotation angle given directly
+    output reg [CORDIC_STAGES-1:0] ica_cordic_rot1_microRot_in,   // External micro rotation input for CORDIC-1 Rotation
+    output reg ica_cordic_rot1_microRot_ext_vld,                  // If HIGH => Micro-rotations are given from outside; LOW => Directly from Vectoring (Need to be assigned properly in testbench)
     output reg [1:0] ica_cordic_rot1_quad_in,                  
     output reg ica_cordic_rot1_angle_microRot_n,
 
@@ -57,11 +57,10 @@ module norm_5d #(
     reg [DATA_WIDTH-1:0] rot_x1_to_y2_fb;
     reg [DATA_WIDTH-1:0] rot_x2_to_y3_fb;
     reg [DATA_WIDTH-1:0] rot_x3_to_y4_fb;
+;
+    wire [DATA_WIDTH-1:0] x_zero = {DATA_WIDTH{1'b0}};          
+    wire [DATA_WIDTH-1:0] y_one = 32'h00100000;                 // 1.0 in Q12.20 format
 
-    wire [DATA_WIDTH-1:0] x_zero = {DATA_WIDTH{1'b0}};           // 0.0
-    wire [DATA_WIDTH-1:0] y_one = 32'h00010000;  // 1.0 in Q15.16 format
-
-    // State machine
     reg [3:0] current_state, next_state;
     localparam IDLE = 4'd0, 
                VEC_1 = 4'd1,
@@ -176,12 +175,12 @@ module norm_5d #(
         if (~nreset) begin
             current_state <= IDLE;
             ica_cordic_rot1_angle_microRot_n <= 1'b0;
-            ica_cordic_rot1_microRot_ext_vld <= 1'b1;  // Should be HIGH for external micro-rotations
+            ica_cordic_rot1_microRot_ext_vld <= 1'b1;             // Should be HIGH for external micro-rotations
             ica_cordic_vec_en <= 1'b0;
             ica_cordic_rot1_en <= 1'b0;                                   
             ica_cordic_vec_xin <= {DATA_WIDTH{1'b0}};
             ica_cordic_vec_yin <= {DATA_WIDTH{1'b0}};
-            ica_cordic_vec_angle_calc_en <= 1'b0;   // high to enable total angle calculation from the micro-angles
+            ica_cordic_vec_angle_calc_en <= 1'b0;                 // high to enable total angle calculation from the micro-angles
             ica_cordic_rot1_xin <= {DATA_WIDTH{1'b0}};                     
             ica_cordic_rot1_yin <= {DATA_WIDTH{1'b0}};                     
             ica_cordic_rot1_microRot_in <= {CORDIC_STAGES{1'b0}};          
@@ -208,7 +207,7 @@ module norm_5d #(
                     ica_cordic_vec_en <= 1'b1;
                     ica_cordic_rot1_en <= 1'b0;                           
                     ica_cordic_vec_xin <= w3;
-                    ica_cordic_vec_yin <= vec_x1_to_y2_ff; // Feed forward from previous vectoring
+                    ica_cordic_vec_yin <= vec_x1_to_y2_ff;                 // Feed forward from previous vectoring
                     ica_cordic_vec_angle_calc_en <= 1'b0;                  // We only need microrotations
                     cordic_nrst <= 1;
                 end
@@ -216,7 +215,7 @@ module norm_5d #(
                     ica_cordic_vec_en <= 1'b1;
                     ica_cordic_rot1_en <= 1'b0;                           
                     ica_cordic_vec_xin <= w4;
-                    ica_cordic_vec_yin <= vec_x2_to_y3_ff; // Feed forward from previous vectoring
+                    ica_cordic_vec_yin <= vec_x2_to_y3_ff;                 // Feed forward from previous vectoring
                     ica_cordic_vec_angle_calc_en <= 1'b0;                  // We only need microrotations
                     cordic_nrst <= 1;
                 end
