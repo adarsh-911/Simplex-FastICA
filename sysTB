@@ -1,0 +1,2 @@
+iverilog ./tb/system/sica_tb.v -o ./build/sim/icarus/sysTB.out
+vvp ./build/sim/icarus/sysTB.out

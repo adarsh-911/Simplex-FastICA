@@ -1,6 +1,6 @@
 clc; clearvars;
 
-addpath('sw-test/FastICA/FastICA_2.1');
+addpath('sw-test/utils');
 addpath('sw-test/mix_signals');
 
 emg_hc = load('dataset/emg_txtfiles/EMG_signalX_HC.txt')';
@@ -32,51 +32,51 @@ num_windows = 50;
 for k = 1:num_windows
   idx_st = (k - 1)*window_size + 1;
   idx_end = k*window_size;
-  window_data = X_mat_mix(1, idx_st:idx_end);
+  window_data = round(X_mat_mix(1, idx_st:idx_end) * 2^20);
 
   file_name = sprintf('dataset/testVectors/channel_1/window_mix_%03d.txt', k);
 
-  dlmwrite(file_name, window_data(:), 'delimiter', '\n');
+  dlmwrite(file_name, window_data(:), 'delimiter', '\n', 'precision', '%d');
 end
 
 for k = 1:num_windows
   idx_st = (k - 1)*window_size + 1;
   idx_end = k*window_size;
-  window_data = X_mat_mix(2, idx_st:idx_end);
+  window_data = round(X_mat_mix(2, idx_st:idx_end)* 2^20);
 
   file_name = sprintf('dataset/testVectors/channel_2/window_mix_%03d.txt', k);
 
-  dlmwrite(file_name, window_data(:), 'delimiter', '\n');
+  dlmwrite(file_name, window_data(:), 'delimiter', '\n', 'precision', '%d');
 end
 
 for k = 1:num_windows
   idx_st = (k - 1)*window_size + 1;
   idx_end = k*window_size;
-  window_data = X_mat_mix(3, idx_st:idx_end);
+  window_data = round(X_mat_mix(3, idx_st:idx_end)* 2^20);
 
   file_name = sprintf('dataset/testVectors/channel_3/window_mix_%03d.txt', k);
 
-  dlmwrite(file_name, window_data(:), 'delimiter', '\n');
+  dlmwrite(file_name, window_data(:), 'delimiter', '\n', 'precision', '%d');
 end
 
 for k = 1:num_windows
   idx_st = (k - 1)*window_size + 1;
   idx_end = k*window_size;
-  window_data = X_mat_mix(4, idx_st:idx_end);
+  window_data = round(X_mat_mix(4, idx_st:idx_end)* 2^20);
 
   file_name = sprintf('dataset/testVectors/channel_4/window_mix_%03d.txt', k);
 
-  dlmwrite(file_name, window_data(:), 'delimiter', '\n');
+  dlmwrite(file_name, window_data(:), 'delimiter', '\n', 'precision', '%d');
 end
 
 for k = 1:num_windows
   idx_st = (k - 1)*window_size + 1;
   idx_end = k*window_size;
-  window_data = X_mat_mix(5, idx_st:idx_end);
+  window_data = round(X_mat_mix(5, idx_st:idx_end)* 2^20);
 
   file_name = sprintf('dataset/testVectors/channel_5/window_mix_%03d.txt', k);
 
-  dlmwrite(file_name, window_data(:), 'delimiter', '\n');
+  dlmwrite(file_name, window_data(:), 'delimiter', '\n', 'precision', '%d');
 end
 
 % Plot
