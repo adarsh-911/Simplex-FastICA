@@ -1,11 +1,12 @@
 import random
 import math
+import time
 
 N = 7
-M = 8
+M = 1024
 DATA_WIDTH = 32
-FRAC_WIDTH = 20
-MAKEVALUESSMALL = DATA_WIDTH-FRAC_WIDTH - 3
+FRAC_WIDTH = 16
+MAKEVALUESSMALL = DATA_WIDTH-FRAC_WIDTH - 2
 
 # Precompute allowed range for signed fixed point
 MAX_VAL = (1 << (DATA_WIDTH - 1)) - 1
@@ -43,6 +44,7 @@ def generate_memory_files():
     W_in_float = [random.uniform(-1.0, 1.0) for _ in range(N)]
     W_in = normalize_to_fixed_point(W_in_float, FRAC_WIDTH)
     Z_in = [generate_random_value(DATA_WIDTH) for _ in range(M * N)]
+    
     G = []
     for m in range(M):
         g_val = 0
@@ -72,15 +74,15 @@ def generate_memory_files():
         w_new = P[n] // M - 3 * W_in[n]
         w_new = w_new & ((1 << DATA_WIDTH) - 1)
         W_out.append(w_new)
-    print("W_in (fixed-point):", W_in)
-    print("W_in (float):", [w / (1 << FRAC_WIDTH) for w in W_in])
-    print("W_in norm:", math.sqrt(sum((w / (1 << FRAC_WIDTH)) ** 2 for w in W_in)))
-    print("G (fixed-point):", G)
-    print("G (float):", [g / (1 << FRAC_WIDTH) for g in G])
-    print("G_norm (fixed-point):", G_norm)
-    print("G_norm (float):", G_norm / (1 << FRAC_WIDTH))
-    print("P (fixed-point):", P)
-    print("P (float):", [p / (1 << FRAC_WIDTH) for p in P])
+    # print("W_in (fixed-point):", W_in)
+    # print("W_in (float):", [w / (1 << FRAC_WIDTH) for w in W_in])
+    # print("W_in norm:", math.sqrt(sum((w / (1 << FRAC_WIDTH)) ** 2 for w in W_in)))
+    # print("G (fixed-point):", G)
+    # print("G (float):", [g / (1 << FRAC_WIDTH) for g in G])
+    # print("G_norm (fixed-point):", G_norm)
+    # print("G_norm (float):", G_norm / (1 << FRAC_WIDTH))
+    # print("P (fixed-point):", P)
+    # print("P (float):", [p / (1 << FRAC_WIDTH) for p in P])
     with open('_W_in.mem', 'w') as f:
         for w in W_in:
             f.write(f"{w & 0xFFFFFFFF:08x}\n")
@@ -92,5 +94,5 @@ def generate_memory_files():
             f.write(f"{w & 0xFFFFFFFF:08x}\n")
 
 if __name__ == "__main__":
-    random.seed(3)
+    random.seed(int(time.time()))
     generate_memory_files()

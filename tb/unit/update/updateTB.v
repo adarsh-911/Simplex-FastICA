@@ -3,17 +3,15 @@
 module tb_updateTop();
 
     parameter N = 7;
-    parameter M = 8;
-    // parameter DATA_WIDTH = 16;
-    // parameter FRAC_WIDTH = 10;
-    // parameter CORDIC_WIDTH = 22;
+    parameter M = 1024;
     parameter DATA_WIDTH = 32;
-    parameter FRAC_WIDTH = 20;
+    parameter FRAC_WIDTH = 16;
     parameter CORDIC_WIDTH = 38;
     parameter ANGLE_WIDTH = 16;
     parameter CORDIC_STAGES = 16;
     parameter CLK_PERIOD = 10;
-    parameter LOGM = 3;
+    parameter LOGM = 10;
+    parameter ADDR_WIDTH = 10;
 
     reg clk;
     reg rst_n;
@@ -22,6 +20,18 @@ module tb_updateTop();
     reg [N*DATA_WIDTH-1:0] W_in;
     reg [N*M*DATA_WIDTH-1:0] Z_in;
     reg [1:0] scica_stage_in;
+    
+    // Z memory interface signals
+    wire Z_in_en;
+    wire [ADDR_WIDTH-1:0] Z_address1;
+    wire [ADDR_WIDTH-1:0] Z_address2;
+    wire signed [DATA_WIDTH-1:0] Z_in1;
+    wire signed [DATA_WIDTH-1:0] Z_in2;
+    wire Z_in_valid;
+    reg zmem_writeEn;
+    reg [ADDR_WIDTH-1:0] zmem_write_addr1;
+    reg [ADDR_WIDTH-1:0] zmem_write_addr2;
+    reg signed [DATA_WIDTH-1:0] zmem_din1;
     
     wire ica_cordic_vec_en;
     wire signed [DATA_WIDTH-1:0] ica_cordic_vec_xin;
@@ -64,6 +74,10 @@ module tb_updateTop();
     reg [DATA_WIDTH-1:0] Z_test [0:(N*M)-1];
     reg [DATA_WIDTH-1:0] expected [0:N-1];
     integer vector_count;
+    integer i, j; // Loop variables
+    
+    // File handle for output
+    integer output_file;
 
     initial begin
         clk = 0;
@@ -81,65 +95,99 @@ module tb_updateTop();
         
         vector_count = 0;
         rst_n = 0; nreset = 0; en = 0; W_in = 0; Z_in = 0; scica_stage_in = 2'b01;
+        zmem_writeEn = 0; zmem_write_addr1 = 0; zmem_write_addr2 = 0; 
+        zmem_din1 = 0;
         #30;
         rst_n = 1; nreset = 1;
+        #25;
+
+        // Load Z memory - inline implementation
+        $display("Loading Z data into memory...");
+        zmem_writeEn = 1;
+        #10;
+        for (i = 0; i < (N*M); i = i + 1) begin
+            zmem_write_addr1 = i;
+            zmem_write_addr2 = 0; 
+            zmem_din1 = Z_test[i];
+            @(posedge clk);
+        end
+        
+        zmem_writeEn = 0;
+        $display("Z data loading complete.");
         #20;
         
-        run_test();
+        // Run test - inline implementation
+        for (i = 0; i < N; i = i + 1)
+            W_in[i*DATA_WIDTH +: DATA_WIDTH] = W_test[i];
+        
+        // $display("Starting test with:");
+        // $display("W_in: %h", W_in);
+        
+        en = 1;
+        wait (output_valid == 1);
+        en = 0;
+        
+        $display("Test Results:");
+        for (i = 0; i < N; i = i + 1) begin
+            $display("Vector %0d, W[%0d] = %08x (Expected = %08x)", 
+                    vector_count, i, W_out[i*DATA_WIDTH +: DATA_WIDTH], expected[i]);
+        end
+        
+        // Open file for appending and write compact results
+        output_file = $fopen("test_results.txt", "a");
+        if (output_file != 0) begin
+            // $fwrite(output_file, "V%0d: ", vector_count);
+            for (i = 0; i < N; i = i + 1) begin
+                $fwrite(output_file, "%08x  %08x\n", W_out[i*DATA_WIDTH +: DATA_WIDTH], expected[i]);
+            end
+            // $fwrite(output_file, "\n");
+            $fclose(output_file);
+        end
+        
+        vector_count = vector_count + 1;
+        #10;
+        rst_n = 0;
+        #10;
+        rst_n = 1;
+        #20;
         
         #100;
         $finish;
     end
 
-    task run_test;
-        integer i, j;
-        begin
-            for (i = 0; i < N; i = i + 1)
-                W_in[i*DATA_WIDTH +: DATA_WIDTH] = W_test[i];
-            
-            for (i = 0; i < M; i = i + 1)
-                for (j = 0; j < N; j = j + 1)
-                    Z_in[(i*N + j)*DATA_WIDTH +: DATA_WIDTH] = Z_test[i*N + j];
-            
-            $display("Starting test with:");
-            $display("W_in: %h", W_in);
-            $display("Z_in: %h", Z_in);
-            
-            en = 1;
-            wait (output_valid == 1);
-            en = 0;
-            
-            $display("Test Results:");
-            for (i = 0; i < N; i = i + 1) begin
-                // if (W_out[i*DATA_WIDTH +: DATA_WIDTH] == expected[i])
-                //     $display("PASS: Vector %0d, W[%0d] = %04x (Expected = %04x)", 
-                //             vector_count, i, W_out[i*DATA_WIDTH +: DATA_WIDTH], expected[i]);
-                // else
-                //     $display("FAIL: Vector %0d, W[%0d] = %04x, Expected = %04x", 
-                //             vector_count, i, W_out[i*DATA_WIDTH +: DATA_WIDTH], expected[i]);
-                $display("Vector %0d, W[%0d] = %04x (Expected = %04x)", 
-                        vector_count, i, W_out[i*DATA_WIDTH +: DATA_WIDTH], expected[i]);
-            end
-            
-            vector_count = vector_count + 1;
-            #10;
-            rst_n = 0;
-            #10;
-            rst_n = 1;
-            #20;
-        end
-    endtask
+    // Z Memory instantiation
+    zmem #(
+        .DATA_WIDTH(DATA_WIDTH),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .LATENCY(1),
+        .M(M),
+        .N(N)
+    ) zmem_inst (
+        .clk(clk),
+        .rst_n(rst_n),
+        .readEn(Z_in_en),
+        .writeEn(zmem_writeEn),
+        .addr1(zmem_writeEn ? zmem_write_addr1 : Z_address1),
+        .addr2(zmem_writeEn ? zmem_write_addr2 : Z_address2),
+        .din1(zmem_din1),
+        .dout1(Z_in1),
+        .dout2(Z_in2),
+        .dout_valid(Z_in_valid)
+    );
 
-    // Updated updateTop instantiation with only the used ports
+    // Updated updateTop instantiation
     updateTop #(
         .N(N), .M(M), .DATA_WIDTH(DATA_WIDTH), .FRAC_WIDTH(FRAC_WIDTH),
-        .CORDIC_WIDTH(CORDIC_WIDTH), .ANGLE_WIDTH(ANGLE_WIDTH), .CORDIC_STAGES(CORDIC_STAGES), .LOGM(LOGM)
+        .CORDIC_WIDTH(CORDIC_WIDTH), .ANGLE_WIDTH(ANGLE_WIDTH), 
+        .CORDIC_STAGES(CORDIC_STAGES), .LOGM(LOGM), .ADDR_WIDTH(ADDR_WIDTH)
     ) uut_updateTop (
         .clk(clk), 
         .rst_n(rst_n), 
         .en(en), 
-        .W_in(W_in), 
-        .Z_in(Z_in),
+        .W_in(W_in),  
+        .Z_in1(Z_in1),
+        .Z_in2(Z_in2),
+        .Z_in_valid(Z_in_valid),
         .cordic_vec_opvld(cordic_vec_opvld), 
         .cordic_vec_xout(cordic_vec_xout),
         .cordic_vec_quad_out(cordic_vec_quad_out),
@@ -157,14 +205,17 @@ module tb_updateTop();
         .ica_cordic_rot1_angle_microRot_n(ica_cordic_rot1_angle_microRot_n),
         .ica_cordic_rot1_microRot_ext_in(ica_cordic_rot1_microRot_ext_in),
         .ica_cordic_rot1_microRot_ext_vld(ica_cordic_rot1_microRot_ext_vld),
-        .ica_cordic_rot1_quad_in(ica_cordic_rot1_quad_in), 
+        .ica_cordic_rot1_quad_in(ica_cordic_rot1_quad_in),
+        .Z_in_en(Z_in_en),
+        .Z_address1(Z_address1),
+        .Z_address2(Z_address2),
         .W_out(W_out), 
         .output_valid(output_valid)
     );
 
-    // CORDIC wrapper - keeping all ports as they may be needed for the wrapper
     SCICA_CORDIC_wrapper #(
-        .DATA_WIDTH(DATA_WIDTH), .CORDIC_STAGES(CORDIC_STAGES), .CORDIC_WIDTH(CORDIC_WIDTH), .ANGLE_WIDTH(ANGLE_WIDTH)
+        .DATA_WIDTH(DATA_WIDTH), .CORDIC_STAGES(CORDIC_STAGES), 
+        .CORDIC_WIDTH(CORDIC_WIDTH), .ANGLE_WIDTH(ANGLE_WIDTH)
     ) dut_cordic (
         .clk(clk), .nreset(nreset), .scica_stage_in(scica_stage_in),
         .ica_cordic_vec_en(ica_cordic_vec_en), .ica_cordic_vec_xin(ica_cordic_vec_xin),

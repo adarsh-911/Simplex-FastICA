@@ -6,13 +6,16 @@ module updateTop #(
     parameter CORDIC_WIDTH = 22,
     parameter ANGLE_WIDTH = 16,
     parameter CORDIC_STAGES = 16,
+    parameter ADDR_WIDTH = 10,
     parameter LOGM = 10
 ) (
     input                          clk,
     input                          rst_n,
     input                          en,
     input  [N*DATA_WIDTH-1:0]      W_in,
-    input  [N*M*DATA_WIDTH-1:0]    Z_in, 
+    input  signed [DATA_WIDTH-1:0]        Z_in1,
+    input  signed [DATA_WIDTH-1:0]        Z_in2, 
+    input                          Z_in_valid,
 
     input                          cordic_vec_opvld,
     input  signed [DATA_WIDTH-1:0] cordic_vec_xout,
@@ -35,6 +38,10 @@ module updateTop #(
     output reg                     ica_cordic_rot1_microRot_ext_vld,
     output reg [1:0]               ica_cordic_rot1_quad_in,
 
+    output reg Z_in_en,
+    output reg [ADDR_WIDTH-1:0] Z_address1,
+    output reg [ADDR_WIDTH-1:0] Z_address2,
+
     output reg [N*DATA_WIDTH-1:0]   W_out,
     output reg                     output_valid
 );
@@ -54,20 +61,17 @@ module updateTop #(
 
     /// temporary registers
     wire signed [3*DATA_WIDTH-1:0] cube_temp;
-    assign cube_temp = (cordic_rot1_xout * cordic_rot1_xout * cordic_rot1_xout);
-    // vedic_cube_32 cuber (
-    //     .a(cordic_rot1_xout),
-    //     .cube(cube_temp)
-    // );
+    // assign cube_temp = (cordic_rot1_xout * cordic_rot1_xout * cordic_rot1_xout);
+
+    reg signed [DATA_WIDTH-1:0] Z_0, Z_1;
 
     wire signed [2*DATA_WIDTH-1:0] ZG1;
-    assign ZG1 = (Z_wire[(Mcounter-1)*N + Ncounter] * G_norm_cube);
+    assign ZG1 = Z_0 * G_norm_cube;
     wire signed [2*DATA_WIDTH-1:0] ZG2;
-    assign ZG2 = (Z_wire[(Mcounter)*N + Ncounter] * G_norm_cube);
+    assign ZG2 = Z_1 * G_norm_cube;
     
     /////////// Only because vivado does not support unpacked arrays as input ports
     wire signed [DATA_WIDTH-1:0] W_wire [0:N-1];
-    wire signed [DATA_WIDTH-1:0] Z_wire [0:N*M-1];
     wire signed [DATA_WIDTH-1:0] G_wire [0:M-1];
     wire signed [DATA_WIDTH-1:0] P_wire [0:N-1];
     
@@ -76,11 +80,7 @@ module updateTop #(
         for (i = 0; i < N; i = i + 1) begin : gen_w_wires
             assign W_wire[i] = W_in[i*DATA_WIDTH +: DATA_WIDTH];
         end
-        
-        for (i = 0; i < N*M; i = i + 1) begin : gen_z_wires  
-            assign Z_wire[i] = Z_in[i*DATA_WIDTH +: DATA_WIDTH];
-        end
-        
+
         for (i = 0; i < M; i = i + 1) begin : gen_g_wires
             assign G_wire[i] = G_kin_cube[i*DATA_WIDTH +: DATA_WIDTH];
         end
@@ -147,12 +147,18 @@ module updateTop #(
             W_out <= {(N*DATA_WIDTH){1'b0}};
             output_valid <= 1'b0;
             cuber_start <= 1'b0;
+            Z_in_en <= 1'b0;
             cuber_data_in <= {DATA_WIDTH{1'b0}};
+            Z_0 <= {DATA_WIDTH{1'b0}};
+            Z_1 <= {DATA_WIDTH{1'b0}};
+            Z_address1 <= 0;
+            Z_address2 <= 0;
         end else if (en) begin
             ica_cordic_vec_en <= 1'b0;
             ica_cordic_rot1_en <= 1'b0;
             output_valid <= 1'b0;
             cuber_start <= 1'b0;
+            Z_in_en <= 1'b0;
             
             if (cuber_valid) begin
                 if (mcounter_eq_0) begin
@@ -165,13 +171,17 @@ module updateTop #(
                 end
             end
 
+            if (Z_in_valid) begin
+                Z_0 <= Z_in1;
+                Z_1 <= Z_in2;
+            end
 
             case (stage_counter)
                 2'b00: begin
                     if (cordic_vec_microRot_out_start) begin
                         ica_cordic_rot1_en <= 1'b1;
-                        ica_cordic_rot1_xin <= ncounter_eq_1 ? Z_wire[Mcounter*N + 0] : Z_wire[Mcounter*N + Ncounter];
-                        ica_cordic_rot1_yin <= ncounter_eq_1 ? Z_wire[Mcounter*N + 1] : cordic_rot1_xout;
+                        ica_cordic_rot1_xin <= Z_0;
+                        ica_cordic_rot1_yin <= ncounter_eq_1 ? Z_1 : cordic_rot1_xout;
                         ica_cordic_rot1_angle_in <= {ANGLE_WIDTH{1'b0}};
                         ica_cordic_rot1_angle_microRot_n <= 1'b0;
                         ica_cordic_rot1_microRot_ext_in <= {CORDIC_STAGES{1'b0}};
@@ -183,6 +193,10 @@ module updateTop #(
                             ica_cordic_vec_en <= 1'b1;
                             ica_cordic_vec_xin <= W_wire[0];
                             ica_cordic_vec_yin <= W_wire[1];
+                            Z_address1 <= Mcounter*N + 0;
+                            Z_address2 <= Mcounter*N + 1;
+                            Z_in_en <= 1'b1; // as long as bram latency is less than cordic microrotstart latency (2 cycles)
+
                             ica_cordic_vec_angle_calc_en <= 1'b1;
                             Ncounter <= Ncounter + 1;
                         end
@@ -190,6 +204,9 @@ module updateTop #(
                             ica_cordic_vec_en <= 1'b1;
                             ica_cordic_vec_xin <= W_wire[Ncounter+1];
                             ica_cordic_vec_yin <= cordic_vec_xout;
+                            Z_address1 <= Mcounter*N + Ncounter + 1;
+                            Z_in_en <= 1'b1; // as long as bram latency is less than cordic microrotstart latency (2 cycles)
+                            
                             ica_cordic_vec_angle_calc_en <= 1'b1;
                             Ncounter <= Ncounter + 1;
                         end
@@ -209,7 +226,7 @@ module updateTop #(
                         // stage_counter <= 2'b01;
                     end
                 end
-                2'b01: begin
+                2'b01: begin // precision losing step, but unavoidable
                     if (mcounter_eq_0) begin
                         ica_cordic_vec_en <= 1'b1;
                         ica_cordic_vec_xin <= G_wire[0];
@@ -247,6 +264,10 @@ module updateTop #(
                             ica_cordic_vec_en <= 1'b1;
                             ica_cordic_vec_xin <= G_wire[0];
                             ica_cordic_vec_yin <= G_wire[1];
+                            Z_address1 <= Mcounter*N + Ncounter;
+                            Z_address2 <= (Mcounter+1)*N + Ncounter;
+                            Z_in_en <= 1'b1; // as long as bram latency is less than cordic microrotstart latency (2 cycles)
+
                             ica_cordic_vec_angle_calc_en <= 1'b0;
                             Mcounter <= Mcounter + 1;
                         end
@@ -254,6 +275,11 @@ module updateTop #(
                             ica_cordic_vec_en <= 1'b1;
                             ica_cordic_vec_xin <= G_wire[Mcounter+1];
                             ica_cordic_vec_yin <= cordic_vec_xout;
+                            
+                            Z_address1 <= Mcounter*N + Ncounter;
+                            Z_address2 <= (Mcounter+1)*N + Ncounter;
+                            Z_in_en <= 1'b1; // as long as bram latency is less than cordic microrotstart latency (2 cycles)
+
                             ica_cordic_vec_angle_calc_en <= 1'b0;
                             Mcounter <= Mcounter + 1;
                         end
