@@ -64,7 +64,6 @@ module sica_top#(
     // Reset flags
     reg updt_nrst, gso_nrst, norm_nrst, conv_nrst, est_nrst, theta_nrst;
 
-    
     integer i;
 
     // Done flags from each processing block
@@ -80,9 +79,7 @@ module sica_top#(
     reg [0:DATA_WIDTH*DIM*SAMPLES-1] z_in;
     reg [0:ANGLE_WIDTH*(DIM-1)-1] thetas;
     reg done_load;
-    
-    //TO FIX: gso_cordic_vec_calc_en,
-    
+
     //Variables used in the modules
         //Mux
         reg mux_en, mux_nrst;
