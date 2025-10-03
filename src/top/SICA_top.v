@@ -81,37 +81,59 @@ module sica_top#(
     reg [0:ANGLE_WIDTH*(DIM-1)-1] thetas;
     reg done_load;
     
+    //TO FIX: gso_cordic_vec_calc_en,
     
     //Variables used in the modules
         //Mux
         reg mux_en, mux_nrst;
         reg [2:0] cordic_input_mux_block;
 
-        reg gso_cordic_vec_en, gso_cordic_rot_en, gso_cordic_vec_angle_calc_en, gso_cordic_rot_microRot_ext_vld, gso_cordic_nrst;
-        reg [DATA_WIDTH-1:0] gso_cordic_vec_xin, gso_cordic_vec_yin, gso_cordic_rot_quad_in, gso_cordic_rot_xin, gso_cordic_rot_yin, gso_cordic_rot_angle_microRot_n;
+        reg gso_cordic_vec_en, gso_cordic_rot_en, gso_cordic_vec_angle_calc_en, gso_cordic_rot_microRot_ext_vld, gso_cordic_nrst, gso_cordic_rot_angle_microRot_n;
+        reg [DATA_WIDTH-1:0] gso_cordic_vec_xin, gso_cordic_vec_yin,  gso_cordic_rot_xin, gso_cordic_rot_yin;
         reg [ANGLE_WIDTH-1:0]  gso_cordic_rot_angle_in;
         reg [CORDIC_STAGES-1:0] gso_cordic_rot_microRot_ext_in;
+        reg [1:0] gso_cordic_rot_quad_in;
 
-        reg norm_cordic_vec_en, norm_cordic_rot_en,   norm_cordic_vec_angle_calc_en, norm_cordic_rot_quad_in, norm_cordic_rot_angle_in, norm_cordic_rot_microRot_ext_in, norm_cordic_rot_angle_microRot_n, norm_cordic_rot_microRot_ext_vld, norm_cordic_nrst;
+        reg norm_cordic_vec_en, norm_cordic_rot_en, norm_cordic_vec_angle_calc_en, norm_cordic_rot_angle_microRot_n, norm_cordic_rot_microRot_ext_vld, norm_cordic_nrst;
         reg [DATA_WIDTH-1:0] norm_cordic_vec_xin, norm_cordic_vec_yin, norm_cordic_rot_xin, norm_cordic_rot_yin;
+        reg [ANGLE_WIDTH-1:0] norm_cordic_rot_angle_in;
+        reg [CORDIC_STAGES-1:0] norm_cordic_rot_microRot_ext_in;
+        reg [1:0] norm_cordic_rot_quad_in;
         
-        reg est_cordic_vec_en, est_cordic_rot_en, est_cordic_vec_angle_calc_en, est_cordic_rot_quad_in, est_cordic_rot_angle_in, est_cordic_rot_microRot_ext_in, est_cordic_rot_angle_microRot_n, est_cordic_rot_microRot_ext_vld, est_cordic_nrst;
+        reg est_cordic_vec_en, est_cordic_rot_en, est_cordic_vec_angle_calc_en, est_cordic_rot_angle_microRot_n, est_cordic_rot_microRot_ext_vld, est_cordic_nrst;
         reg [DATA_WIDTH-1:0] est_cordic_vec_xin, est_cordic_vec_yin, est_cordic_rot_xin, est_cordic_rot_yin;
+        reg [ANGLE_WIDTH-1:0] est_cordic_rot_angle_in;
+        reg [CORDIC_STAGES-1:0] est_cordic_rot_microRot_ext_in;
+        reg [1:0] est_cordic_rot_quad_in;
 
-        reg updt_cordic_vec_en, updt_cordic_rot_en, updt_cordic_vec_angle_calc_en, updt_cordic_rot_quad_in, updt_cordic_rot_angle_in, updt_cordic_rot_microRot_ext_in, updt_cordic_rot_angle_microRot_n, updt_cordic_rot_microRot_ext_vld, updt_cordic_nrst;
+        reg updt_cordic_vec_en, updt_cordic_rot_en, updt_cordic_vec_angle_calc_en, updt_cordic_rot_angle_microRot_n, updt_cordic_rot_microRot_ext_vld, updt_cordic_nrst;
         reg [DATA_WIDTH-1:0] updt_cordic_vec_xin, updt_cordic_vec_yin, updt_cordic_rot_xin, updt_cordic_rot_yin;
+        reg [ANGLE_WIDTH-1:0] updt_cordic_rot_angle_in;
+        reg [CORDIC_STAGES-1:0] updt_cordic_rot_microRot_ext_in;
+        reg [1:0] updt_cordic_rot_quad_in;
 
-        reg conv_cordic_vec_en, conv_cordic_rot_en, conv_cordic_vec_xin, conv_cordic_vec_yin, conv_cordic_vec_angle_calc_en, conv_cordic_rot_quad_in, conv_cordic_rot_xin, conv_cordic_rot_yin, conv_cordic_rot_angle_in, conv_cordic_rot_microRot_ext_in, conv_cordic_rot_angle_microRot_n, conv_cordic_rot_microRot_ext_vld, conv_cordic_nrst;
+        reg conv_cordic_vec_en, conv_cordic_rot_en, conv_cordic_vec_angle_calc_en, conv_cordic_rot_angle_microRot_n, conv_cordic_rot_microRot_ext_vld, conv_cordic_nrst;
+        reg [DATA_WIDTH-1:0] conv_cordic_vec_xin, conv_cordic_vec_yin, conv_cordic_rot_xin, conv_cordic_rot_yin;
+        reg [ANGLE_WIDTH-1:0] conv_cordic_rot_angle_in;
+        reg [CORDIC_STAGES-1:0] conv_cordic_rot_microRot_ext_in;
+        reg [1:0] conv_cordic_rot_quad_in;
+
+        reg theta_cordic_vec_en, theta_cordic_rot_en, theta_cordic_vec_angle_calc_en, theta_cordic_rot_angle_microRot_n, theta_cordic_rot_microRot_ext_vld, theta_cordic_nrst;
+        reg [DATA_WIDTH-1:0] theta_cordic_vec_xin, theta_cordic_vec_yin, theta_cordic_rot_xin, theta_cordic_rot_yin;
+        reg [ANGLE_WIDTH-1:0] theta_cordic_rot_angle_in;
+        reg [CORDIC_STAGES-1:0] theta_cordic_rot_microRot_ext_in;
+        reg [1:0] theta_cordic_rot_quad_in;
         
-        reg theta_cordic_vec_en, theta_cordic_rot_en, theta_cordic_vec_xin, theta_cordic_vec_yin, theta_cordic_vec_angle_calc_en, theta_cordic_rot_quad_in, theta_cordic_rot_xin, theta_cordic_rot_yin, theta_cordic_rot_angle_in, theta_cordic_rot_microRot_ext_in, theta_cordic_rot_angle_microRot_n, theta_cordic_rot_microRot_ext_vld, theta_cordic_nrst;
         //Common 
-        reg cordic_vec_en, cordic_rot_en,  cordic_vec_angle_calc_en, cordic_rot_quad_in,  cordic_rot_angle_in, cordic_rot_microRot_ext_in, cordic_rot_angle_microRot_n, cordic_rot_microRot_ext_vld;
+        reg cordic_vec_en, cordic_rot_en,  cordic_vec_angle_calc_en, cordic_rot_angle_microRot_n, cordic_rot_microRot_ext_vld;
         reg [DATA_WIDTH-1:0] cordic_vec_xin, cordic_vec_yin, cordic_rot_xin, cordic_rot_yin;
+        reg [ANGLE_WIDTH-1:0] cordic_rot_angle_in;
+        reg [CORDIC_STAGES-1:0] cordic_rot_microRot_ext_in;
+        reg [1:0] cordic_rot_quad_in;
+
         //Common cordic o/p
         reg cordic_nrst, cordic_vec_opvld, cordic_vec_xout,vec_quad,vec_angle_out,vec_microRot_dir,vec_microRot_out_start,cordic_rot_opvld, cordic_rot_xout, cordic_rot_yout;
-        //reg [DATA_WIDTH-1:0]
-        //reg [CORDIC_STAGES-1:0]
-        //reg [ANGLE_WIDTH-1:0]
+        
         //GSO
         reg [2:0]kin;
         //Theta block
@@ -397,11 +419,11 @@ module sica_top#(
         .N(DIM), 
         .M(SAMPLES), 
         .DATA_WIDTH(DATA_WIDTH), 
-        .FRAC_WIDTH(FRAC_WIDTH), //Add this
+        .FRAC_WIDTH(FRAC_WIDTH), 
         .CORDIC_WIDTH(CORDIC_WIDTH), 
         .ANGLE_WIDTH(ANGLE_WIDTH), 
         .CORDIC_STAGES(CORDIC_STAGES), 
-        .LOGM(LOGM) //Add this
+        .LOGM(LOGM) 
     ) uut_updateTop (
         .clk(clk), 
         .rst_n(updt_nrst), 
