@@ -361,7 +361,7 @@ module sica_top#(
         .rst_n(gso_nrst),
         .en(gso_en),
         .k_in(k_idx + 3'b1),
-        .w_in_flat(w_mat),
+        .w_in_flat(w_curr), 
         .thetas_in_flat(thetas_in_flat),
         .cordic_rot_xout(cordic_rot_xout),
         .cordic_rot_yout(cordic_rot_yout),
@@ -399,7 +399,7 @@ module sica_top#(
         .ica_cordic_rot1_en(norm_cordic_rot_en),
         .ica_cordic_rot1_xin(norm_cordic_rot_xin),
         .ica_cordic_rot1_yin(norm_cordic_rot_yin),
-        .ica_cordic_rot1_microRot_in(norm_cordic_rot_microRot_in),
+        .ica_cordic_rot1_microRot_in(norm_cordic_rot_microRot_ext_in), ////////////CHECK
         .ica_cordic_rot1_quad_in(norm_cordic_rot_quad_in),
         .cordic_vec_opvld(cordic_vec_opvld),
         .cordic_vec_xout(cordic_vec_xout),
