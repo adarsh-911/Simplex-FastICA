@@ -82,55 +82,58 @@ module sica_top#(
 
     //Variables used in the modules
         //Mux
-        reg mux_en, mux_nrst;
+        wire mux_en, mux_nrst;
         reg [2:0] cordic_input_mux_block;
 
-        reg gso_cordic_vec_en, gso_cordic_rot_en, gso_cordic_vec_angle_calc_en, gso_cordic_rot_microRot_ext_vld, gso_cordic_nrst, gso_cordic_rot_angle_microRot_n;
-        reg [DATA_WIDTH-1:0] gso_cordic_vec_xin, gso_cordic_vec_yin,  gso_cordic_rot_xin, gso_cordic_rot_yin;
-        reg [ANGLE_WIDTH-1:0]  gso_cordic_rot_angle_in;
-        reg [CORDIC_STAGES-1:0] gso_cordic_rot_microRot_ext_in;
-        reg [1:0] gso_cordic_rot_quad_in;
+        wire gso_cordic_vec_en, gso_cordic_rot_en, gso_cordic_vec_angle_calc_en, gso_cordic_rot_microRot_ext_vld, gso_cordic_nrst, gso_cordic_rot_angle_microRot_n;
+        wire [DATA_WIDTH-1:0] gso_cordic_vec_xin, gso_cordic_vec_yin,  gso_cordic_rot_xin, gso_cordic_rot_yin;
+        wire [ANGLE_WIDTH-1:0]  gso_cordic_rot_angle_in;
+        wire [CORDIC_STAGES-1:0] gso_cordic_rot_microRot_ext_in;
+        wire [1:0] gso_cordic_rot_quad_in;
 
-        reg norm_cordic_vec_en, norm_cordic_rot_en, norm_cordic_vec_angle_calc_en, norm_cordic_rot_angle_microRot_n, norm_cordic_rot_microRot_ext_vld, norm_cordic_nrst;
-        reg [DATA_WIDTH-1:0] norm_cordic_vec_xin, norm_cordic_vec_yin, norm_cordic_rot_xin, norm_cordic_rot_yin;
-        reg [ANGLE_WIDTH-1:0] norm_cordic_rot_angle_in;
-        reg [CORDIC_STAGES-1:0] norm_cordic_rot_microRot_ext_in;
-        reg [1:0] norm_cordic_rot_quad_in;
+        wire norm_cordic_vec_en, norm_cordic_rot_en, norm_cordic_vec_angle_calc_en, norm_cordic_rot_angle_microRot_n, norm_cordic_rot_microRot_ext_vld, norm_cordic_nrst;
+        wire [DATA_WIDTH-1:0] norm_cordic_vec_xin, norm_cordic_vec_yin, norm_cordic_rot_xin, norm_cordic_rot_yin;
+        wire [ANGLE_WIDTH-1:0] norm_cordic_rot_angle_in;
+        wire [CORDIC_STAGES-1:0] norm_cordic_rot_microRot_ext_in;
+        wire [1:0] norm_cordic_rot_quad_in;
         
-        reg est_cordic_vec_en, est_cordic_rot_en, est_cordic_vec_angle_calc_en, est_cordic_rot_angle_microRot_n, est_cordic_rot_microRot_ext_vld, est_cordic_nrst;
-        reg [DATA_WIDTH-1:0] est_cordic_vec_xin, est_cordic_vec_yin, est_cordic_rot_xin, est_cordic_rot_yin;
-        reg [ANGLE_WIDTH-1:0] est_cordic_rot_angle_in;
-        reg [CORDIC_STAGES-1:0] est_cordic_rot_microRot_ext_in;
-        reg [1:0] est_cordic_rot_quad_in;
+        wire est_cordic_vec_en, est_cordic_rot_en, est_cordic_vec_angle_calc_en, est_cordic_rot_angle_microRot_n, est_cordic_rot_microRot_ext_vld, est_cordic_nrst;
+        wire [DATA_WIDTH-1:0] est_cordic_vec_xin, est_cordic_vec_yin, est_cordic_rot_xin, est_cordic_rot_yin;
+        wire [ANGLE_WIDTH-1:0] est_cordic_rot_angle_in;
+        wire [CORDIC_STAGES-1:0] est_cordic_rot_microRot_ext_in;
+        wire [1:0] est_cordic_rot_quad_in;
 
-        reg updt_cordic_vec_en, updt_cordic_rot_en, updt_cordic_vec_angle_calc_en, updt_cordic_rot_angle_microRot_n, updt_cordic_rot_microRot_ext_vld, updt_cordic_nrst;
-        reg [DATA_WIDTH-1:0] updt_cordic_vec_xin, updt_cordic_vec_yin, updt_cordic_rot_xin, updt_cordic_rot_yin;
-        reg [ANGLE_WIDTH-1:0] updt_cordic_rot_angle_in;
-        reg [CORDIC_STAGES-1:0] updt_cordic_rot_microRot_ext_in;
-        reg [1:0] updt_cordic_rot_quad_in;
+        wire updt_cordic_vec_en, updt_cordic_rot_en, updt_cordic_vec_angle_calc_en, updt_cordic_rot_angle_microRot_n, updt_cordic_rot_microRot_ext_vld, updt_cordic_nrst;
+        wire [DATA_WIDTH-1:0] updt_cordic_vec_xin, updt_cordic_vec_yin, updt_cordic_rot_xin, updt_cordic_rot_yin;
+        wire [ANGLE_WIDTH-1:0] updt_cordic_rot_angle_in;
+        wire [CORDIC_STAGES-1:0] updt_cordic_rot_microRot_ext_in;
+        wire [1:0] updt_cordic_rot_quad_in;
 
-        reg conv_cordic_vec_en, conv_cordic_rot_en, conv_cordic_vec_angle_calc_en, conv_cordic_rot_angle_microRot_n, conv_cordic_rot_microRot_ext_vld, conv_cordic_nrst;
-        reg [DATA_WIDTH-1:0] conv_cordic_vec_xin, conv_cordic_vec_yin, conv_cordic_rot_xin, conv_cordic_rot_yin;
-        reg [ANGLE_WIDTH-1:0] conv_cordic_rot_angle_in;
-        reg [CORDIC_STAGES-1:0] conv_cordic_rot_microRot_ext_in;
-        reg [1:0] conv_cordic_rot_quad_in;
+        wire conv_cordic_vec_en, conv_cordic_rot_en, conv_cordic_vec_angle_calc_en, conv_cordic_rot_angle_microRot_n, conv_cordic_rot_microRot_ext_vld, conv_cordic_nrst;
+        wire [DATA_WIDTH-1:0] conv_cordic_vec_xin, conv_cordic_vec_yin, conv_cordic_rot_xin, conv_cordic_rot_yin;
+        wire [ANGLE_WIDTH-1:0] conv_cordic_rot_angle_in;
+        wire [CORDIC_STAGES-1:0] conv_cordic_rot_microRot_ext_in;
+        wire [1:0] conv_cordic_rot_quad_in;
 
-        reg theta_cordic_vec_en, theta_cordic_rot_en, theta_cordic_vec_angle_calc_en, theta_cordic_rot_angle_microRot_n, theta_cordic_rot_microRot_ext_vld, theta_cordic_nrst;
-        reg [DATA_WIDTH-1:0] theta_cordic_vec_xin, theta_cordic_vec_yin, theta_cordic_rot_xin, theta_cordic_rot_yin;
-        reg [ANGLE_WIDTH-1:0] theta_cordic_rot_angle_in;
-        reg [CORDIC_STAGES-1:0] theta_cordic_rot_microRot_ext_in;
-        reg [1:0] theta_cordic_rot_quad_in;
+        wire theta_cordic_vec_en, theta_cordic_rot_en, theta_cordic_vec_angle_calc_en, theta_cordic_rot_angle_microRot_n, theta_cordic_rot_microRot_ext_vld, theta_cordic_nrst;
+        wire [DATA_WIDTH-1:0] theta_cordic_vec_xin, theta_cordic_vec_yin, theta_cordic_rot_xin, theta_cordic_rot_yin;
+        wire [ANGLE_WIDTH-1:0] theta_cordic_rot_angle_in;
+        wire [CORDIC_STAGES-1:0] theta_cordic_rot_microRot_ext_in;
+        wire [1:0] theta_cordic_rot_quad_in;
         
         //Common 
-        reg cordic_vec_en, cordic_rot_en,  cordic_vec_angle_calc_en, cordic_rot_angle_microRot_n, cordic_rot_microRot_ext_vld;
-        reg [DATA_WIDTH-1:0] cordic_vec_xin, cordic_vec_yin, cordic_rot_xin, cordic_rot_yin;
-        reg [ANGLE_WIDTH-1:0] cordic_rot_angle_in;
-        reg [CORDIC_STAGES-1:0] cordic_rot_microRot_ext_in;
-        reg [1:0] cordic_rot_quad_in;
+        wire cordic_vec_en, cordic_rot_en,  cordic_vec_angle_calc_en, cordic_rot_angle_microRot_n, cordic_rot_microRot_ext_vld;
+        wire [DATA_WIDTH-1:0] cordic_vec_xin, cordic_vec_yin, cordic_rot_xin, cordic_rot_yin;
+        wire [ANGLE_WIDTH-1:0] cordic_rot_angle_in;
+        wire [CORDIC_STAGES-1:0] cordic_rot_microRot_ext_in;
+        wire [1:0] cordic_rot_quad_in;
 
         //Common cordic o/p
-        reg cordic_nrst, cordic_vec_opvld, cordic_vec_xout,vec_quad,vec_angle_out,vec_microRot_dir,vec_microRot_out_start,cordic_rot_opvld, cordic_rot_xout, cordic_rot_yout;
-        
+        wire cordic_nrst, cordic_vec_opvld, vec_microRot_out_start, cordic_rot_opvld;
+        wire [DATA_WIDTH-1:0]  cordic_vec_xout, cordic_rot_xout, cordic_rot_yout;
+        wire [ANGLE_WIDTH-1:0] vec_angle_out;
+        wire [CORDIC_STAGES-1:0] vec_microRot_dir;
+        wire [1:0] vec_quad;
         //GSO
         reg [2:0]kin;
         //Theta block
@@ -357,7 +360,7 @@ module sica_top#(
         .clk(clk),
         .rst_n(gso_nrst),
         .en(gso_en),
-        .k_in(k_idx + 1),
+        .k_in(k_idx + 3'b1),
         .w_in_flat(w_mat),
         .thetas_in_flat(thetas_in_flat),
         .cordic_rot_xout(cordic_rot_xout),
