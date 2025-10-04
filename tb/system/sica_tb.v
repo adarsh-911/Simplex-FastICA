@@ -124,7 +124,7 @@ end
 
 initial begin
     $dumpfile("dump.vcd");
-    $dumpvars(0, sica_top_tb);
+    $dumpvars(0, sica_tb);
 end
 
 endmodule

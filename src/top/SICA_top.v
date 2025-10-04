@@ -403,10 +403,10 @@ module sica_top#(
         .ica_cordic_rot1_quad_in(norm_cordic_rot_quad_in),
         .cordic_vec_opvld(cordic_vec_opvld),
         .cordic_vec_xout(cordic_vec_xout),
-        .cordic_vec_microRot_out(cordic_vec_microRot_out),
-        .cordic_vec_quad_out(cordic_vec_quad_out),
-        .cordic_vec_microRot_out_start(cordic_vec_microRot_out_start),
-        .cordic_vec_angle_out(cordic_vec_angle_out),
+        .cordic_vec_microRot_out(vec_microRot_dir),
+        .cordic_vec_quad_out(vec_quad),
+        .cordic_vec_microRot_out_start(vec_microRot_out_start),
+        .cordic_vec_angle_out(vec_angle_out),
         .cordic_rot1_opvld(cordic_rot_opvld),
         .cordic_rot1_xout(cordic_rot_xout),
         .cordic_rot1_yout(cordic_rot_yout),
@@ -428,11 +428,12 @@ module sica_top#(
         .clk(clk), 
         .rst_n(updt_nrst), 
         .en(updt_en), 
-        .W_in(w_mat), 
-        .Z_in(z_in),
+        .W_in(w_curr), 
+        .Z_in1(Z_in1), /////////////////////ADD
+        .Z_in2(Z_in2), ///////////////////ADD
         .cordic_vec_opvld(cordic_vec_opvld), 
         .cordic_vec_xout(cordic_vec_xout),
-        .cordic_vec_quad_out(cordic_vec_quad_out),
+        .cordic_vec_quad_out(vec_quad),
         .cordic_vec_microRot_out_start(vec_microRot_out_start),//CHECK
         .cordic_rot1_opvld(cordic_rot_opvld), 
         .cordic_rot1_xout(cordic_rot_xout), 
@@ -447,7 +448,10 @@ module sica_top#(
         .ica_cordic_rot1_angle_microRot_n(updt_cordic_rot_angle_microRot_n),
         .ica_cordic_rot1_microRot_ext_in(updt_cordic_rot_microRot_ext_in),
         .ica_cordic_rot1_microRot_ext_vld(updt_cordic_rot_microRot_ext_vld),
-        .ica_cordic_rot1_quad_in(updt_cordic_rot_quad_in), 
+        .ica_cordic_rot1_quad_in(updt_cordic_rot_quad_in),
+        .Z_in_en(), //////////////////////////////ADD
+        .Z_address1(), //////////////////////////ADD
+        .Z_address2(), /////////////////////////ADD
         .W_out(updt_w_out), 
         .output_valid(updt_done)
     );
@@ -489,7 +493,7 @@ module sica_top#(
         .start(theta_en),
         .w_in_flat(w_curr),
         .cordic_xout(xf), //CHECK
-        .cordic_angle_out(cordic_vec_angle_out),
+        .cordic_angle_out(vec_angle_out),
         .cordic_op_vld(cordic_vec_opvld),
         .cordic_nrst(cordic_nrst),
         .cordic_en(theta_cordic_vec_en),
