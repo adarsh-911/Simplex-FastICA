@@ -9,7 +9,9 @@ module sica_tb #(
   parameter CORDIC_WIDTH = 38,
   parameter FRAC_WIDTH = 20,
   parameter LOGM = 10,
-  parameter ANGLE_WIDTH = 16
+  parameter ANGLE_WIDTH = 16,
+  parameter LATENCY = 1,
+  parameter ADDR_WIDTH = 10
 ) ();
 
   reg clk;
@@ -26,7 +28,7 @@ module sica_tb #(
   wire done;
   wire signed [DATA_WIDTH*DIM*SAMPLES-1:0] s_est;
 
-  localparam CLK_CYCLES = 15000;
+  parameter CLK_CYCLES = 15000;
 
   sica_top #(
     .DATA_WIDTH(DATA_WIDTH),
@@ -105,26 +107,29 @@ module sica_tb #(
   serial_z_in = 0;
   load_data = 0;
 
-  repeat(5) @(posedge clk);
+  #10
   nreset = 1;
+  start = 1;
 
-  repeat(2) @(posedge clk);
+  #10
   z_valid = 1;
   load_data = 1;
 
   forever begin
     @(posedge clk);
-    serial_z_in = channel_data[idx];
-    idx = idx + 1;
+    if (load_data) begin
+      serial_z_in = channel_data[idx];
+      idx = idx + 1;
+    end
     if (idx == DIM*SAMPLES) load_data = 0;
   end
 
-  #(CLK_CYCLES) $finish;
+  #10 $finish;
 end
 
 initial begin
-    $dumpfile("dump.vcd");
-    $dumpvars(0, sica_tb);
+  $dumpfile("dump.vcd");
+  $dumpvars(0, sica_tb);
 end
 
 endmodule

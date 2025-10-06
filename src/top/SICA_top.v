@@ -8,6 +8,8 @@ module sica_top#(
 
     parameter FRAC_WIDTH = 20,
     parameter LOGM = 10,
+    parameter LATENCY = 1,
+    parameter ADDR_WIDTH = 10,
 
     // CORDIC Parameters
     parameter CORDIC_WIDTH    = 22,
@@ -59,6 +61,10 @@ module sica_top#(
     reg [$clog2(MAX_ITERATIONS)-1:0] iter_count;
     reg [$clog2(SAMPLES*DIM)-1:0] load_count;
     
+    wire [DATA_WIDTH-1:0] Z_in1, Z_in2;
+    wire [ADDR_WIDTH-1:0] addr1, addr2;
+    wire Z_in_en;
+
     // Enable flags for each processing block
     reg updt_en, gso_en, norm_en, conv_en, est_en, theta_en;
     // Reset flags
@@ -79,7 +85,7 @@ module sica_top#(
     reg [0:DATA_WIDTH*DIM*SAMPLES-1] z_in;
     reg [0:ANGLE_WIDTH*(DIM-1)-1] thetas;
     reg done_load;
-
+    reg zmem_writeEn;
     //Variables used in the modules
         //Mux
         wire mux_en, mux_nrst;
@@ -449,13 +455,33 @@ module sica_top#(
         .ica_cordic_rot1_microRot_ext_in(updt_cordic_rot_microRot_ext_in),
         .ica_cordic_rot1_microRot_ext_vld(updt_cordic_rot_microRot_ext_vld),
         .ica_cordic_rot1_quad_in(updt_cordic_rot_quad_in),
-        .Z_in_en(), //////////////////////////////ADD
-        .Z_address1(), //////////////////////////ADD
-        .Z_address2(), /////////////////////////ADD
+        .Z_in_en(Z_in_en), //////////////////////////////ADD
+        .Z_address1(addr1), //////////////////////////ADD
+        .Z_address2(addr2), /////////////////////////ADD
         .W_out(updt_w_out), 
         .output_valid(updt_done)
     );
 
+    //Bram
+    zmem #(
+        .DATA_WIDTH(DATA_WIDTH),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .LATENCY(LATENCY),
+        .M(SAMPLES),
+        .N(DIM)
+    ) memory1(
+        .clk(clk),
+        .rst_n(nreset),
+        .readEn(Z_in_en),
+        .writeEn(zmem_writeEn),
+        .addr1(addr1),
+        .addr2(addr2),
+        .din1(serial_z_in),
+        .dout1(Z_in1),
+        .dout2(Z_in2),
+        .dout_valid(Z_in_valid)
+    );
+    
     //Convergence Block
     w_diff_norm #(
         .N(DIM),
@@ -530,12 +556,30 @@ module sica_top#(
             case (state)
                 S_IDLE: if (sica_start) state <= S_LOAD_DATA;
                 S_LOAD_DATA: begin
-                    if (serial_z_valid && load_data) begin
-                        if (done_load) state <= S_INIT_K;
-                        else begin 
-                            z_in[(load_count)*DATA_WIDTH +: DATA_WIDTH] <= serial_z_in;
-                            if (load_count == (SAMPLES * DIM) - 1) done_load <= 1;
-                            else load_count = load_count + 1;
+                // By default, don't write to memory
+                zmem_writeEn <= 0; 
+                
+                // PRIORITY 1: Check if loading is complete.
+                if (done_load) begin
+                    state <= S_INIT_K; // Transition to the next state
+                    done_load <= 0;    // IMPORTANT: Reset the flag for the next run
+                end 
+                // PRIORITY 2: If not done, check for new data to load.
+                else if (serial_z_valid && load_data) begin
+                        // A valid piece of data has arrived.
+                        // Store the data into your BRAM/memory.
+                        z_in[(load_count*DATA_WIDTH) +: DATA_WIDTH] <= serial_z_in[31:0];
+                        zmem_writeEn <= 1;
+
+                        // Check if this is the LAST piece of data.
+                        if (load_count == (SAMPLES * DIM) - 1) begin
+                            // If yes, set the done flag. The FSM will see this
+                            // on the NEXT clock cycle and transition.
+                            done_load <= 1;
+                        end 
+                        else begin
+                            // If no, just increment the counter.
+                            load_count <= load_count + 1;
                         end
                     end
                 end

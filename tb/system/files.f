@@ -31,3 +31,4 @@ src/top/theta_block/theta_block.v
 src/utils/cordic_control/cordic_control.v
 src/top/SICA_top.v
 tb/system/sica_tb.v
+src/utils/zinbram.v
