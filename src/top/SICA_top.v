@@ -2,7 +2,7 @@
 
 module sica_top#(
     parameter DATA_WIDTH      = 16,
-    parameter DIM             = 7,
+    parameter DIM             = 5,
     parameter SAMPLES         = 1024,
     parameter MAX_ITERATIONS  = 100,
 
@@ -556,31 +556,23 @@ module sica_top#(
             case (state)
                 S_IDLE: if (sica_start) state <= S_LOAD_DATA;
                 S_LOAD_DATA: begin
-                // By default, don't write to memory
                 zmem_writeEn <= 0; 
                 
-                // PRIORITY 1: Check if loading is complete.
                 if (done_load) begin
-                    state <= S_INIT_K; // Transition to the next state
-                    done_load <= 0;    // IMPORTANT: Reset the flag for the next run
+                    state <= S_INIT_K; 
+                    done_load <= 0;    
                 end 
-                // PRIORITY 2: If not done, check for new data to load.
+                
                 else if (serial_z_valid && load_data) begin
-                        // A valid piece of data has arrived.
-                        // Store the data into your BRAM/memory.
-                        z_in[(load_count*DATA_WIDTH) +: DATA_WIDTH] <= serial_z_in[31:0];
-                        zmem_writeEn <= 1;
+                    z_in[(load_count*DATA_WIDTH) +: DATA_WIDTH] <= serial_z_in[31:0];
+                    zmem_writeEn <= 1;
 
-                        // Check if this is the LAST piece of data.
-                        if (load_count == (SAMPLES * DIM) - 1) begin
-                            // If yes, set the done flag. The FSM will see this
-                            // on the NEXT clock cycle and transition.
-                            done_load <= 1;
-                        end 
-                        else begin
-                            // If no, just increment the counter.
-                            load_count <= load_count + 1;
-                        end
+                    if (load_count == (SAMPLES * DIM) - 1) begin
+                        done_load <= 1;
+                    end 
+                    else begin
+                        load_count <= load_count + 1;
+                    end
                     end
                 end
 
