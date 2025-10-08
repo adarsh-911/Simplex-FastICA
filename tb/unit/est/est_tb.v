@@ -47,6 +47,7 @@ wire vec_microRot_out_start;
 wire cordic_nrst;
 
 reg [DATA_WIDTH-1:0] S_element;
+reg [DATA_WIDTH*DIM*SAMPLES-1:0] S_est_reversed;
 
 ESTIMATION_TOP #(
   .DATA_WIDTH(DATA_WIDTH),
@@ -153,7 +154,7 @@ initial begin
 
   //W_mat[0 +: DATA_WIDTH] = 16'h7FFF;
   //W_mat[(DATA_WIDTH*DIM) +: DATA_WIDTH] = 0;
-
+  /*
   W_mat[(0*DATA_WIDTH*DIM) +: DATA_WIDTH] = 16'h0078; // 120
   W_mat[(1*DATA_WIDTH*DIM) +: DATA_WIDTH] = 16'h0032; // 50
   W_mat[(2*DATA_WIDTH*DIM) +: DATA_WIDTH] = 16'h0050; // 80
@@ -161,21 +162,45 @@ initial begin
   Z_in[(0*DATA_WIDTH*SAMPLES) +: DATA_WIDTH] = 16'h0064; // 100
   Z_in[(1*DATA_WIDTH*SAMPLES) +: DATA_WIDTH] = 16'h0096; // 150
   Z_in[(2*DATA_WIDTH*SAMPLES) +: DATA_WIDTH] = 16'h00C8; // 200
+  */
 
   // Dot product = 35500
 
-  W_mat[(0*DIM + 1)*DATA_WIDTH +: DATA_WIDTH] = 16'hFF88; // -120
-  W_mat[(1*DIM + 1)*DATA_WIDTH +: DATA_WIDTH] = 16'h0032; // 50
-  W_mat[(2*DIM + 1)*DATA_WIDTH +: DATA_WIDTH] = 16'hFFB0; // -80
+  W_mat[(0*DIM)*DATA_WIDTH +: DATA_WIDTH] = 16'h000A;
+  W_mat[(1*DIM)*DATA_WIDTH +: DATA_WIDTH] = 16'h0028;
+  W_mat[(2*DIM)*DATA_WIDTH +: DATA_WIDTH] = 16'h0046;
 
-  Z_in[(0*SAMPLES + 1)*DATA_WIDTH +: DATA_WIDTH] = 16'h0064; // 100
-  Z_in[(1*SAMPLES + 1)*DATA_WIDTH +: DATA_WIDTH] = 16'hFF6A; // -150
-  Z_in[(2*SAMPLES + 1)*DATA_WIDTH +: DATA_WIDTH] = 16'h00C8; // 200
+  W_mat[(0*DIM + 1)*DATA_WIDTH +: DATA_WIDTH] = 16'h0014;
+  W_mat[(1*DIM + 1)*DATA_WIDTH +: DATA_WIDTH] = 16'h0032;
+  W_mat[(2*DIM + 1)*DATA_WIDTH +: DATA_WIDTH] = 16'h0050;
+
+  W_mat[(0*DIM + 2)*DATA_WIDTH +: DATA_WIDTH] = 16'h001E;
+  W_mat[(1*DIM + 2)*DATA_WIDTH +: DATA_WIDTH] = 16'h003C;
+  W_mat[(2*DIM + 2)*DATA_WIDTH +: DATA_WIDTH] = 16'h005A;
+
+  Z_in[(0*SAMPLES)*DATA_WIDTH +: DATA_WIDTH] = 16'h0005;
+  Z_in[(1*SAMPLES)*DATA_WIDTH +: DATA_WIDTH] = 16'h0019;
+  Z_in[(2*SAMPLES)*DATA_WIDTH +: DATA_WIDTH] = 16'h002D;
+  
+  Z_in[(0*SAMPLES + 1)*DATA_WIDTH +: DATA_WIDTH] = 16'h000A;
+  Z_in[(1*SAMPLES + 1)*DATA_WIDTH +: DATA_WIDTH] = 16'h001E;
+  Z_in[(2*SAMPLES + 1)*DATA_WIDTH +: DATA_WIDTH] = 16'h0032;
+
+  Z_in[(0*SAMPLES + 2)*DATA_WIDTH +: DATA_WIDTH] = 16'h000F;
+  Z_in[(1*SAMPLES + 2)*DATA_WIDTH +: DATA_WIDTH] = 16'h0023;
+  Z_in[(2*SAMPLES + 2)*DATA_WIDTH +: DATA_WIDTH] = 16'h0037;
+
+  Z_in[(0*SAMPLES + 3)*DATA_WIDTH +: DATA_WIDTH] = 16'h0014;
+  Z_in[(1*SAMPLES + 3)*DATA_WIDTH +: DATA_WIDTH] = 16'h0028;
+  Z_in[(2*SAMPLES + 3)*DATA_WIDTH +: DATA_WIDTH] = 16'h003C;
 
   #20 rstn = 1;
   #20 en = 1;
   #100000 S_element = S_est[0 +: DATA_WIDTH];
-  #100 $finish;
+  #100
+  S_est_reversed = S_est;
+  $display("S_est = %h", S_est_reversed);
+  $finish;
 end
 
 initial begin
