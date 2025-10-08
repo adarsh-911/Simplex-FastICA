@@ -231,9 +231,9 @@ module tb_5d_pipe();
         .cordic_rot1_yout(cordic_rot1_yout)
     );
 
-    initial begin
-      $dumpfile("out_norm_5d.vcd");
-      $dumpvars(0);
-    end
+  initial begin
+    $dumpfile("build/sim/icarus/dump.vcd");
+    $dumpvars(0, tb_5d_pipe);
+  end
 
 endmodule

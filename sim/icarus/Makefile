@@ -36,5 +36,8 @@ compile_update:
 run: compile
 	$(VVP) $(OUT)
 
+run_unit:
+	$(VVP) $(OUT)
+
 wave:
 	$(WAVE) $(BUILD)/dump.vcd

@@ -179,9 +179,8 @@ initial begin
 end
 
 initial begin
-  $dumpfile("../../build/sim/icarus/dump.vcd");
+  $dumpfile("build/sim/icarus/dump.vcd");
   $dumpvars(0, ESTIMATION_TB);
 end
-
 
 endmodule

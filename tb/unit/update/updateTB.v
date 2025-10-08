@@ -90,7 +90,7 @@ module tb_updateTop();
         $readmemh("_Z_in.mem", Z_test);
         $readmemh("_expected.mem", expected);
         
-        $dumpfile("tb_updateTop.vcd");
+        $dumpfile("build/sim/icarus/dump.vcd");
         $dumpvars(0, tb_updateTop);
         
         vector_count = 0;

@@ -123,5 +123,10 @@ module tb_process_vector;
         $finish;
     end
 
+  initial begin
+    $dumpfile("build/sim/icarus/dump.vcd");
+    $dumpvars(0, tb_process_vector);
+  end
+
 endmodule
 
