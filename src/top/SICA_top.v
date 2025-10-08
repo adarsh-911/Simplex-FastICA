@@ -617,7 +617,7 @@ module sica_top#(
                 end
 
                 S_CHECK_SIMPLEX : begin
-                    state <= (k_idx == DIM) ? S_ESTIMATION : S_NORMALIZE;
+                    state <= (k_idx == DIM - 1) ? S_ESTIMATION : S_NORMALIZE;
                 end
 
                 S_NORMALIZE : begin

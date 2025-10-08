@@ -2,6 +2,7 @@ module COMPUTE_DOT_PRODUCT2D #(
   parameter DATA_WIDTH = 16,
   parameter EXT_DIM = 4,
   parameter ANGLE_WIDTH = 16,
+  parameter FRAC_WIDTH = 20,
   parameter CORDIC_STAGES = 16
 ) (
   input clk,
@@ -38,6 +39,8 @@ module COMPUTE_DOT_PRODUCT2D #(
 
 reg [4:0] count;
 reg [DATA_WIDTH-1:0] accum;
+
+reg [(DATA_WIDTH*2)-1:0] mult;
 
 reg [DATA_WIDTH-1:0] vec1 [0:1];
 reg [DATA_WIDTH-1:0] vec2 [0:1];
@@ -119,22 +122,25 @@ always @(posedge clk) begin
       ROTATE_EN : begin
         cordic_rot_en <= 1'b1;
 
-        state <= ACCUMULATE;
+        if (cordic_rot_opvld) begin
+
+          mult <= (cordic_vec_xout * cordic_rot_xout) >>> FRAC_WIDTH;
+          state <= ACCUMULATE;
+
+          cordic_nrst <= 0;
+        end
       end
 
       ACCUMULATE : begin
         
-        if (cordic_rot_opvld) begin
-          accum <= accum + (cordic_vec_xout * cordic_rot_xout);
+        accum <= accum + mult[DATA_WIDTH-1:0];
 
-          if (count == EXT_DIM - 2) state <= DONE;
-          else begin
-            count <= count + 2;
-            state <= INIT_PAIR;
-          end
-
-          cordic_nrst <= 0;
+        if (count == EXT_DIM - 2) state <= DONE;
+        else begin
+          count <= count + 2;
+          state <= INIT_PAIR;
         end
+
       end
 
       DONE : begin

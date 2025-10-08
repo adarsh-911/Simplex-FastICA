@@ -66,8 +66,11 @@ always @(posedge clk) begin
           vector_b[(i*DATA_WIDTH) +: DATA_WIDTH] <= Z_in[(i*SAMPLES + z_count)*DATA_WIDTH +: DATA_WIDTH];
         end
 
-        vector_a[(EXT_DIM-1)*DATA_WIDTH +: DATA_WIDTH] <= 0;
-        vector_b[(EXT_DIM-1)*DATA_WIDTH +: DATA_WIDTH] <= 0;
+        if (EXT_DIM != DIM) begin
+          vector_a[(EXT_DIM-1)*DATA_WIDTH +: DATA_WIDTH] <= 0;
+          vector_b[(EXT_DIM-1)*DATA_WIDTH +: DATA_WIDTH] <= 0;
+        end
+
         rstn_dot <= 1;
         state <= CAL_DOT_PRODUCT;
       end

@@ -19,7 +19,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 module ip_upscale #(
-        parameter DATA_WIDTH = 16,
+        parameter DATA_WIDTH = 32,
         parameter CORDIC_WIDTH = 22
     ) (
 //        input clk,

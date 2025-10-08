@@ -1,12 +1,12 @@
 `timescale 1ps/1ps
 
 module ESTIMATION_TB #(
-  parameter DATA_WIDTH = 16,
-  parameter DIM = 3,
-  parameter SAMPLES = 4,
+  parameter DATA_WIDTH = 32,
+  parameter DIM = 5,
+  parameter SAMPLES = 10,
 
   parameter ANGLE_WIDTH = 16,
-  parameter CORDIC_WIDTH = 22,
+  parameter CORDIC_WIDTH = 38,
   parameter CORDIC_STAGES = 16
 ) ();
 
@@ -48,6 +48,11 @@ wire cordic_nrst;
 
 reg [DATA_WIDTH-1:0] S_element;
 reg [DATA_WIDTH*DIM*SAMPLES-1:0] S_est_reversed;
+
+reg signed [0:DATA_WIDTH*DIM*SAMPLES-1] temp_z [0:0];
+reg signed [0:DATA_WIDTH*DIM*DIM-1] temp_w [0:0];
+
+integer fd;
 
 ESTIMATION_TOP #(
   .DATA_WIDTH(DATA_WIDTH),
@@ -128,6 +133,8 @@ CORDIC_doubly_pipe_top #(
   .cordic_rot_yout(cordic_rot_yout)
 );
 
+parameter CLK_CYCLES = 1000000;
+
 initial begin
   clk = 0;
   forever #10 clk = ~clk;
@@ -166,6 +173,8 @@ initial begin
 
   // Dot product = 35500
 
+  /*
+
   W_mat[(0*DIM)*DATA_WIDTH +: DATA_WIDTH] = 16'h000A;
   W_mat[(1*DIM)*DATA_WIDTH +: DATA_WIDTH] = 16'h0028;
   W_mat[(2*DIM)*DATA_WIDTH +: DATA_WIDTH] = 16'h0046;
@@ -193,12 +202,22 @@ initial begin
   Z_in[(0*SAMPLES + 3)*DATA_WIDTH +: DATA_WIDTH] = 16'h0014;
   Z_in[(1*SAMPLES + 3)*DATA_WIDTH +: DATA_WIDTH] = 16'h0028;
   Z_in[(2*SAMPLES + 3)*DATA_WIDTH +: DATA_WIDTH] = 16'h003C;
+  */
+
+  $readmemh("sw-test/unit/est/_wTest.mem", temp_w);
+  $readmemh("sw-test/unit/est/_zTest.mem", temp_z);
+
+  W_mat = temp_w[0];
+  Z_in = temp_z[0];
 
   #20 rstn = 1;
   #20 en = 1;
-  #100000 S_element = S_est[0 +: DATA_WIDTH];
-  #100
+  #(CLK_CYCLES)
   S_est_reversed = S_est;
+
+  fd = $fopen("sw-test/unit/est/out/sim.raw", "w");
+  $fwrite(fd, "%h", S_est_reversed);
+
   $display("S_est = %h", S_est_reversed);
   $finish;
 end

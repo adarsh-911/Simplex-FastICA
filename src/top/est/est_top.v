@@ -2,6 +2,7 @@ module ESTIMATION_TOP #(
   parameter DATA_WIDTH = 16,
   parameter DIM = 3,
   parameter SAMPLES = 4,
+  parameter FRAC_WIDTH = 20,
 
   parameter ANGLE_WIDTH = 16,
   parameter CORDIC_WIDTH = 22,
@@ -82,6 +83,7 @@ COMPUTE_DOT_PRODUCT2D #(
   .DATA_WIDTH(DATA_WIDTH),
   .EXT_DIM(EXT_DIM),
   .ANGLE_WIDTH(ANGLE_WIDTH),
+  .FRAC_WIDTH(FRAC_WIDTH),
   .CORDIC_STAGES(CORDIC_STAGES)
 ) u_dot_prod_dim (
   .clk(clk),
