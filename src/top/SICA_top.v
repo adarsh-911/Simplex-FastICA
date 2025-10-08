@@ -88,7 +88,8 @@ module sica_top#(
     reg zmem_writeEn;
     //Variables used in the modules
         //Mux
-        wire mux_en, mux_nrst;
+        wire mux_en=1;
+        wire mux_nrst;
         reg [2:0] cordic_input_mux_block;
 
         wire gso_cordic_vec_en, gso_cordic_rot_en, gso_cordic_vec_angle_calc_en, gso_cordic_rot_microRot_ext_vld, gso_cordic_nrst, gso_cordic_rot_angle_microRot_n;
@@ -352,7 +353,7 @@ module sica_top#(
         .cordic_rot_microRot_ext_in(est_cordic_rot_microRot_ext_in),
         .cordic_rot_angle_microRot_n(est_cordic_rot_angle_microRot_n), 
         .cordic_rot_microRot_ext_vld(est_cordic_rot_microRot_ext_vld),
-        .cordic_nrst(mux_nrst) //////////////////////////CHECK
+        .cordic_nrst(est_cordic_nrst) //////////////////////////CHECK
     );
 
     //GSO Block
@@ -390,14 +391,14 @@ module sica_top#(
         .CORDIC_WIDTH(CORDIC_WIDTH),
         .CORDIC_STAGES(CORDIC_STAGES),
         .ANGLE_WIDTH(ANGLE_WIDTH)
-    ) uut (
+    ) normalisation_inst (
         .clk(clk),
         .nreset(norm_nrst), ///////CHECK
         .w_in(w_curr),
         .start(norm_en),
         .W_out(norm_out),
         .done(norm_done),
-        .cordic_nrst(cordic_nrst),
+        .cordic_nrst(norm_cordic_nrst),
         .ica_cordic_vec_en(norm_cordic_vec_en),
         .ica_cordic_vec_xin(norm_cordic_vec_xin),
         .ica_cordic_vec_yin(norm_cordic_vec_yin),
@@ -538,7 +539,8 @@ module sica_top#(
             load_count <= {(SAMPLES*DIM){1'b0}};
             done_load <= 0;
             thetas_in_flat <= {(ANGLE_WIDTH*(DIM-1)*(DIM-1)){1'b0}};
-            w_mat <= {(DATA_WIDTH*DIM*DIM){1'b0}}; // Initial guess
+            //w_mat <= {(DATA_WIDTH*DIM*DIM){1'b1}}; // Initial guess
+            w_mat <= {(DIM){160'h0010000000100000001000000010000000100000}};
 
             cordic_input_mux_block <= 0;
 
@@ -586,7 +588,6 @@ module sica_top#(
                     for (i = 0 ; i < DIM ; i = i + 1) begin
                       w_curr[(i*DATA_WIDTH) +: DATA_WIDTH] <= w_mat[(i*DIM + k_idx)*DATA_WIDTH +: DATA_WIDTH];
                     end
-
                     state <= S_GSO;
                 end
 

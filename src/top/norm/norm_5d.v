@@ -5,7 +5,8 @@ module norm_5d #(
     parameter DATA_WIDTH = 32,
     parameter CORDIC_WIDTH = 38,
     parameter CORDIC_STAGES = 32,
-    parameter ANGLE_WIDTH = 32
+    parameter ANGLE_WIDTH = 32,
+    parameter FRAC_WIDTH = 20
 )(
     input clk,
     input nreset,
@@ -59,19 +60,22 @@ module norm_5d #(
     reg [DATA_WIDTH-1:0] rot_x3_to_y4_fb;
 ;
     wire [DATA_WIDTH-1:0] x_zero = {DATA_WIDTH{1'b0}};          
-    wire [DATA_WIDTH-1:0] y_one = 32'h00100000;                 // 1.0 in Q12.20 format
+    wire [DATA_WIDTH-1:0] y_one = 32'h00100000;                 // 1.0 in Q11.20 format
+
+    reg input_is_valid;
 
     reg [3:0] current_state, next_state;
     localparam IDLE = 4'd0, 
-               VEC_1 = 4'd1,
-               VEC_2 = 4'd2,
-               VEC_3 = 4'd3,
-               VEC_4 = 4'd4,
-               ROT_1 = 4'd5,
-               ROT_2 = 4'd6,
-               ROT_3 = 4'd7,
-               ROT_4 = 4'd8,
-               DONE = 4'd9;
+               CHECK = 4'd1,
+               VEC_1 = 4'd2,
+               VEC_2 = 4'd3,
+               VEC_3 = 4'd4,
+               VEC_4 = 4'd5,
+               ROT_1 = 4'd6,
+               ROT_2 = 4'd7,
+               ROT_3 = 4'd8,
+               ROT_4 = 4'd9,
+               DONE = 4'd10;
 
     always @(posedge clk or negedge nreset) begin
         if (~nreset) begin
@@ -136,6 +140,8 @@ module norm_5d #(
     always @(posedge clk or negedge nreset) begin
         if (~nreset) begin
             W_out <= {(DIMENSIONS*DATA_WIDTH){1'b0}};
+        end else if (|w_in == 0 && current_state == CHECK) begin
+            W_out <= { (DIMENSIONS*DATA_WIDTH){1'b0} }; // If all inputs are zero, output zeros directly
         end else if (cordic_rot1_opvld) begin
             case(current_state)
                 ROT_1: begin
@@ -157,7 +163,8 @@ module norm_5d #(
 
     always @(*) begin
         case (current_state)
-            IDLE: next_state = (start) ? VEC_1 : IDLE;
+            IDLE: next_state = (start) ? CHECK : IDLE;
+            CHECK: next_state = (|w_in) ? VEC_1 : DONE; // If all inputs are zero, bypass CORDIC and output zeros directly
             VEC_1: next_state = (cordic_vec_opvld) ? VEC_2 : VEC_1;
             VEC_2: next_state = (cordic_vec_opvld) ? VEC_3 : VEC_2;
             VEC_3: next_state = (cordic_vec_opvld) ? VEC_4 : VEC_3;
@@ -193,6 +200,11 @@ module norm_5d #(
                 IDLE: begin
                     ica_cordic_vec_en <= 1'b0;
                     ica_cordic_rot1_en <= 1'b0;
+                    cordic_nrst <= 0;                        
+                end
+                CHECK: begin
+                    ica_cordic_vec_en <= 1'b0;
+                    ica_cordic_rot1_en <= 1'b0;                      
                     cordic_nrst <= 0;                        
                 end
                 VEC_1: begin
@@ -267,7 +279,7 @@ module norm_5d #(
                     ica_cordic_vec_en <= 1'b0;
                     ica_cordic_rot1_en <= 1'b1;                           
                     ica_cordic_rot1_xin <= x_zero;                         
-                    ica_cordic_rot1_yin <= rot_x2_to_y3_fb;  // Feedback from previous rotation
+                    ica_cordic_rot1_yin <= rot_x3_to_y4_fb;  // Feedback from previous rotation
                     ica_cordic_rot1_microRot_in <= theta_1;                
                     ica_cordic_rot1_quad_in  <= quad_1;                   
                 end
