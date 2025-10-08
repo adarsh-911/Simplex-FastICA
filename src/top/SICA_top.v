@@ -172,7 +172,7 @@ module sica_top#(
         .gso_cordic_rot_microRot_ext_in(gso_cordic_rot_microRot_ext_in),
         .gso_cordic_rot_angle_microRot_n(gso_cordic_rot_angle_microRot_n),
         .gso_cordic_rot_microRot_ext_vld(gso_cordic_rot_microRot_ext_vld),
-        .gso_cordic_nrst(gso_cordic_nrst),
+        .gso_cordic_nrst(gso_nrst), //Same reset for both block and cordic
 
         // NORMALIZATION MUX
         .norm_cordic_vec_en(norm_cordic_vec_en),
@@ -456,6 +456,7 @@ module sica_top#(
         .ica_cordic_rot1_microRot_ext_in(updt_cordic_rot_microRot_ext_in),
         .ica_cordic_rot1_microRot_ext_vld(updt_cordic_rot_microRot_ext_vld),
         .ica_cordic_rot1_quad_in(updt_cordic_rot_quad_in),
+        .cordic_nrst(updt_cordic_nrst),
         .Z_in_en(Z_in_en), //////////////////////////////ADD
         .Z_address1(addr1), //////////////////////////ADD
         .Z_address2(addr2), /////////////////////////ADD
@@ -571,6 +572,7 @@ module sica_top#(
 
                     if (load_count == (SAMPLES * DIM) - 1) begin
                         done_load <= 1;
+                        zmem_writeEn <= 0;
                     end 
                     else begin
                         load_count <= load_count + 1;

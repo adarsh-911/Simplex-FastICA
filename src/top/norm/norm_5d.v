@@ -58,24 +58,21 @@ module norm_5d #(
     reg [DATA_WIDTH-1:0] rot_x1_to_y2_fb;
     reg [DATA_WIDTH-1:0] rot_x2_to_y3_fb;
     reg [DATA_WIDTH-1:0] rot_x3_to_y4_fb;
-;
+
     wire [DATA_WIDTH-1:0] x_zero = {DATA_WIDTH{1'b0}};          
     wire [DATA_WIDTH-1:0] y_one = 32'h00100000;                 // 1.0 in Q11.20 format
 
-    reg input_is_valid;
-
     reg [3:0] current_state, next_state;
     localparam IDLE = 4'd0, 
-               CHECK = 4'd1,
-               VEC_1 = 4'd2,
-               VEC_2 = 4'd3,
-               VEC_3 = 4'd4,
-               VEC_4 = 4'd5,
-               ROT_1 = 4'd6,
-               ROT_2 = 4'd7,
-               ROT_3 = 4'd8,
-               ROT_4 = 4'd9,
-               DONE = 4'd10;
+               VEC_1 = 4'd1,
+               VEC_2 = 4'd2,
+               VEC_3 = 4'd3,
+               VEC_4 = 4'd4,
+               ROT_1 = 4'd5,
+               ROT_2 = 4'd6,
+               ROT_3 = 4'd7,
+               ROT_4 = 4'd8,
+               DONE = 4'd9;
 
     always @(posedge clk or negedge nreset) begin
         if (~nreset) begin
@@ -140,8 +137,11 @@ module norm_5d #(
     always @(posedge clk or negedge nreset) begin
         if (~nreset) begin
             W_out <= {(DIMENSIONS*DATA_WIDTH){1'b0}};
-        end else if (|w_in == 0 && current_state == CHECK) begin
-            W_out <= { (DIMENSIONS*DATA_WIDTH){1'b0} }; // If all inputs are zero, output zeros directly
+        // CHANGE 2: Added a specific condition to handle the zero-input bypass.
+        // This sets the output to zero when we are in IDLE, receive a start signal,
+        // and the input vector is all zeros.
+        end else if (current_state == IDLE && start && ~|w_in) begin
+            W_out <= { (DIMENSIONS*DATA_WIDTH){1'b0} };
         end else if (cordic_rot1_opvld) begin
             case(current_state)
                 ROT_1: begin
@@ -163,16 +163,28 @@ module norm_5d #(
 
     always @(*) begin
         case (current_state)
-            IDLE: next_state = (start) ? CHECK : IDLE;
-            CHECK: next_state = (|w_in) ? VEC_1 : DONE; // If all inputs are zero, bypass CORDIC and output zeros directly
+            // CHANGE 1: Modified the IDLE state logic. Removed the CHECK state.
+            // On a 'start' signal, it now checks the input vector 'w_in'.
+            // If any bit in 'w_in' is 1 (|w_in is true), it proceeds to VEC_1.
+            // If 'w_in' is all zeros, it jumps directly to the DONE state.
+            IDLE: begin
+                if (start) begin
+                    if (|w_in) // Check if any bit is non-zero
+                        next_state = VEC_1;
+                    else
+                        next_state = DONE; // All zeros, so bypass CORDIC
+                end else begin
+                    next_state = IDLE;
+                end
+            end
             VEC_1: next_state = (cordic_vec_opvld) ? VEC_2 : VEC_1;
             VEC_2: next_state = (cordic_vec_opvld) ? VEC_3 : VEC_2;
             VEC_3: next_state = (cordic_vec_opvld) ? VEC_4 : VEC_3;
-            VEC_4: next_state = {cordic_vec_opvld} ? ROT_1 : VEC_4;
+            VEC_4: next_state = (cordic_vec_opvld) ? ROT_1 : VEC_4; // Corrected brace from {} to ()
             ROT_1: next_state = (cordic_rot1_opvld) ? ROT_2 : ROT_1;
             ROT_2: next_state = (cordic_rot1_opvld) ? ROT_3 : ROT_2;
             ROT_3: next_state = (cordic_rot1_opvld) ? ROT_4 : ROT_3;
-            ROT_4: next_state = {cordic_rot1_opvld} ? DONE : ROT_4; 
+            ROT_4: next_state = (cordic_rot1_opvld) ? DONE : ROT_4; // Corrected brace from {} to ()
             DONE: next_state = IDLE;
             default: next_state = IDLE;
         endcase
@@ -200,11 +212,6 @@ module norm_5d #(
                 IDLE: begin
                     ica_cordic_vec_en <= 1'b0;
                     ica_cordic_rot1_en <= 1'b0;
-                    cordic_nrst <= 0;                        
-                end
-                CHECK: begin
-                    ica_cordic_vec_en <= 1'b0;
-                    ica_cordic_rot1_en <= 1'b0;                      
                     cordic_nrst <= 0;                        
                 end
                 VEC_1: begin
