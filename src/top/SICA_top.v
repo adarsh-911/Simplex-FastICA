@@ -62,7 +62,8 @@ module sica_top#(
     reg [$clog2(SAMPLES*DIM)-1:0] load_count;
     
     wire [DATA_WIDTH-1:0] Z_in1, Z_in2;
-    wire [ADDR_WIDTH-1:0] addr1, addr2;
+    reg [ADDR_WIDTH-1:0] addr1, addr2;
+    wire [ADDR_WIDTH-1:0] addr1_updt, addr2_updt;
     wire Z_in_en;
 
     // Enable flags for each processing block
@@ -128,25 +129,29 @@ module sica_top#(
         wire [CORDIC_STAGES-1:0] theta_cordic_rot_microRot_ext_in;
         wire [1:0] theta_cordic_rot_quad_in;
         
-        //Common 
+        // Common 
         wire cordic_vec_en, cordic_rot_en,  cordic_vec_angle_calc_en, cordic_rot_angle_microRot_n, cordic_rot_microRot_ext_vld;
         wire [DATA_WIDTH-1:0] cordic_vec_xin, cordic_vec_yin, cordic_rot_xin, cordic_rot_yin;
         wire [ANGLE_WIDTH-1:0] cordic_rot_angle_in;
         wire [CORDIC_STAGES-1:0] cordic_rot_microRot_ext_in;
         wire [1:0] cordic_rot_quad_in;
 
-        //Common cordic o/p
+        // Common cordic o/p
         wire cordic_nrst, cordic_vec_opvld, vec_microRot_out_start, cordic_rot_opvld;
         wire [DATA_WIDTH-1:0]  cordic_vec_xout, cordic_rot_xout, cordic_rot_yout;
         wire [ANGLE_WIDTH-1:0] vec_angle_out;
         wire [CORDIC_STAGES-1:0] vec_microRot_dir;
         wire [1:0] vec_quad;
-        //GSO
-        reg [2:0]kin;
-        //Theta block
+        // GSO
+        reg [2:0] kin;
+        // Theta block
         reg [ANGLE_WIDTH*(DIM-1)*(DIM-1)-1:0] thetas_in_flat;
         reg [DATA_WIDTH-1:0]xf, theta_xout, theta_yout;
-    //Instantiating modules
+
+        // Memory
+        wire Z_in_valid;
+        reg [DATA_WIDTH-1:0] z_mem_in;
+    // Instantiating modules
     CONTROL_MUX_CORDIC #(
         .DATA_WIDTH(DATA_WIDTH),
         .CORDIC_WIDTH(CORDIC_WIDTH),
@@ -278,7 +283,7 @@ module sica_top#(
         .nreset(cordic_nrst)
         );
     
-    //MAIN CORDIC MODULE
+    // MAIN CORDIC MODULE
     CORDIC_doubly_pipe_top #(
         .DATA_WIDTH(DATA_WIDTH),
         .CORDIC_WIDTH(CORDIC_WIDTH),
@@ -314,7 +319,7 @@ module sica_top#(
         .cordic_rot_yout(cordic_rot_yout)
         );
 
-    //Estimation Block
+    // Estimation Block
     ESTIMATION_TOP #(
         .DATA_WIDTH(DATA_WIDTH), 
         .DIM(DIM), 
@@ -356,7 +361,7 @@ module sica_top#(
         .cordic_nrst(est_cordic_nrst) //////////////////////////CHECK
     );
 
-    //GSO Block
+    // GSO Block
     gso_top #(
         .DATA_WIDTH(DATA_WIDTH),
         .ANGLE_WIDTH(ANGLE_WIDTH),
@@ -367,7 +372,7 @@ module sica_top#(
         .clk(clk),
         .rst_n(gso_nrst),
         .en(gso_en),
-        .k_in(k_idx + 3'b1),
+        .k_in(k_idx + 3'd1),
         .w_in_flat(w_curr), 
         .thetas_in_flat(thetas_in_flat),
         .cordic_rot_xout(cordic_rot_xout),
@@ -384,7 +389,7 @@ module sica_top#(
         .cordic_rot_quad_in(gso_cordic_rot_quad_in)
     );
 
-    //Normalisation block
+    // Normalisation Block
     norm_5d #(
         .DIMENSIONS(DIM),
         .DATA_WIDTH(DATA_WIDTH),
@@ -421,7 +426,7 @@ module sica_top#(
         .ica_cordic_rot1_microRot_ext_vld(norm_cordic_rot_microRot_ext_vld)
     );
 
-    //Update block
+    // Update Block
     updateTop #(
         .N(DIM), 
         .M(SAMPLES), 
@@ -431,7 +436,7 @@ module sica_top#(
         .ANGLE_WIDTH(ANGLE_WIDTH), 
         .CORDIC_STAGES(CORDIC_STAGES), 
         .LOGM(LOGM) 
-    ) uut_updateTop (
+    ) update_inst (
         .clk(clk), 
         .rst_n(updt_nrst), 
         .en(updt_en), 
@@ -457,42 +462,43 @@ module sica_top#(
         .ica_cordic_rot1_microRot_ext_vld(updt_cordic_rot_microRot_ext_vld),
         .ica_cordic_rot1_quad_in(updt_cordic_rot_quad_in),
         .cordic_nrst(updt_cordic_nrst),
+        .Z_in_valid(Z_in_valid),
         .Z_in_en(Z_in_en), //////////////////////////////ADD
-        .Z_address1(addr1), //////////////////////////ADD
-        .Z_address2(addr2), /////////////////////////ADD
+        .Z_address1(addr1_updt), //////////////////////////ADD
+        .Z_address2(addr2_updt), /////////////////////////ADD
         .W_out(updt_w_out), 
         .output_valid(updt_done)
     );
 
-    //Bram
+    // BRAM
     zmem #(
         .DATA_WIDTH(DATA_WIDTH),
         .ADDR_WIDTH(ADDR_WIDTH),
         .LATENCY(LATENCY),
         .M(SAMPLES),
         .N(DIM)
-    ) memory1(
+    ) bram_inst (
         .clk(clk),
         .rst_n(nreset),
         .readEn(Z_in_en),
         .writeEn(zmem_writeEn),
         .addr1(addr1),
         .addr2(addr2),
-        .din1(serial_z_in),
+        .din1(z_mem_in),
         .dout1(Z_in1),
         .dout2(Z_in2),
         .dout_valid(Z_in_valid)
     );
     
-    //Convergence Block
+    // Convergence Block
     w_diff_norm #(
         .N(DIM),
         .DATA_WIDTH(DATA_WIDTH),
         .ANGLE_WIDTH(ANGLE_WIDTH),
         .CORDIC_STAGES(CORDIC_STAGES)
-    ) dnorm_inst(
+    ) dnorm_inst (
         .clk(clk),
-        .rst_n(nreset),
+        .rst_n(conv_nrst),
         .en(conv_en),
         .w_in(w_curr),
 
@@ -508,7 +514,7 @@ module sica_top#(
         .output_valid(conv_done) /////CHECK
     );
 
-    //THETA BLOCK
+    // THETA Block
     sequential_cordic_processor#(
         .DATA_WIDTH(DATA_WIDTH),
         .ANGLE_WIDTH(ANGLE_WIDTH),
@@ -559,21 +565,24 @@ module sica_top#(
             case (state)
                 S_IDLE: if (sica_start) state <= S_LOAD_DATA;
                 S_LOAD_DATA: begin
-                zmem_writeEn <= 0; 
+                zmem_writeEn <= 1; 
                 
                 if (done_load) begin
                     state <= S_INIT_K; 
-                    done_load <= 0;    
+                    done_load <= 0;
+                    zmem_writeEn <= 0;
                 end 
                 
                 else if (serial_z_valid && load_data) begin
-                    z_in[(load_count*DATA_WIDTH) +: DATA_WIDTH] <= serial_z_in[31:0];
-                    zmem_writeEn <= 1;
+                    z_in[(load_count*DATA_WIDTH) +: DATA_WIDTH] <= serial_z_in;
+                    //zmem_writeEn <= 1;
+                    addr1 <= load_count;
+                    addr2 <= 0;
+                    z_mem_in <= serial_z_in;
 
                     if (load_count == (SAMPLES * DIM) - 1) begin
                         done_load <= 1;
-                        zmem_writeEn <= 0;
-                    end 
+                    end
                     else begin
                         load_count <= load_count + 1;
                     end
@@ -618,22 +627,22 @@ module sica_top#(
                     if (norm_done) begin
                         w_curr <= norm_out;
                         norm_en <= 0;
-                        state <= S_CONVERGENCE_CHECK;
+                        state <= S_CONVERGENCE;
                     end
                 end
 
                 S_CONVERGENCE : begin
-                    if (iter_count == 1) state <= S_UPDATE;
-                    else begin
+                    //if (iter_count == 1) state <= S_UPDATE;
+                    //else begin
                         conv_en <= 1;
                         conv_nrst <= 1;
                         cordic_input_mux_block <= 3'b100;
                         if (conv_done) begin
                             norm_diff <= conv_out;
                             conv_en <= 0;
-                            state <= S_CONVERGENCE_CHECK;
+                            state <= (iter_count == 0) ? S_UPDATE : S_CONVERGENCE_CHECK;
                         end
-                    end
+                    //end
                 end
 
                 S_CONVERGENCE_CHECK : begin
@@ -703,5 +712,10 @@ module sica_top#(
             endcase
         end
     end
+
+    assign addr1_updt = addr1;
+    assign addr2_updt = addr2;
+    assign updt_cordic_nrst = updt_nrst;
+    assign conv_cordic_nrst = conv_nrst;
     
 endmodule

@@ -2,7 +2,7 @@
 
 module sica_tb #(
   parameter DATA_WIDTH = 32,
-  parameter SAMPLES = 1024,
+  parameter SAMPLES = 10,
   parameter DIM = 5,
   parameter MAX_ITERATIONS = 500,
   parameter CORDIC_STAGES = 16,
@@ -28,7 +28,7 @@ module sica_tb #(
   wire done;
   wire signed [DATA_WIDTH*DIM*SAMPLES-1:0] s_est;
 
-  parameter CLK_CYCLES = 15000;
+  parameter CLK_CYCLES = 100000;
 
   sica_top #(
     .DATA_WIDTH(DATA_WIDTH),
@@ -107,28 +107,30 @@ module sica_tb #(
   serial_z_in = 0;
   load_data = 0;
 
-  #10
-  nreset = 1;
+  #10 nreset = 1;
   start = 1;
 
-  #10
-  z_valid = 1;
+  #10 z_valid = 1;
   load_data = 1;
 
-  forever begin
-    @(posedge clk);
-    if (load_data) begin
+  while (idx <= DIM*SAMPLES) begin
+    @(negedge clk);
+    if (idx < DIM*SAMPLES && load_data) begin
+      //$display("idx = %d", idx);
       serial_z_in = channel_data[idx];
-      idx = idx + 1;
+      //idx = idx + 1;
     end
-    if (idx == DIM*SAMPLES) load_data = 0;
+    else load_data = 0;
+    idx = idx + 1;
   end
 
-  #10 $finish;
+  //load_data = 0; 
+  #(CLK_CYCLES);
+  $finish;
 end
 
 initial begin
-  $dumpfile("dump.vcd");
+  $dumpfile("build/sim/icarus/sica_dump.vcd");
   $dumpvars(0, sica_tb);
 end
 

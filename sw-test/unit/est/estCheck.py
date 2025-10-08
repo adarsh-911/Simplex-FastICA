@@ -26,7 +26,7 @@ def print_matrix_hex(name, matrix):
 
 print_matrix_hex("Matrix W (3x3)", W)
 print_matrix_hex("Matrix Z (3x4)", Z)
-print_matrix_hex("Result (3x4)", result)
+print_matrix_hex("Expected S_est (3x4)", result)
 
 S_est_hex_str = input("\nS_est hex string: ").strip()
 
@@ -43,14 +43,15 @@ result_flat = result.flatten()
 if len(S_est) != len(result_flat):
   raise ValueError(f"S_est length ({len(S_est)}) does not match result size ({len(result_flat)}).")
 
-error = result_flat.astype(np.int32) - S_est.astype(np.int32)
+error = (result_flat.astype(np.int32) - S_est.astype(np.int32))
 abs_error = np.abs(error)
 
-print("\nIndex | Result(hex) | S_est(hex) | Error (dec)")
+print("\nIndex | Actual(hex) | Expected(hex) | Error (dec)")
 print("-----------------------------------------------")
 for i in range(len(result_flat)):
-  print(f"{i:5d} | 0x{result_flat[i]:04X} | 0x{S_est[i]:04X} | {error[i]:6d}")
+  print(f"{i:5d} | 0x{result_flat[i]:04X} | 0x{S_est[i]:04X} | {error[i]:04X}")
 
+'''
 plt.figure()
 plt.title("Per-element Error (Result - S_est)")
 plt.plot(abs_error, marker='o')
@@ -58,3 +59,4 @@ plt.xlabel("Element Index")
 plt.ylabel("Absolute Error (LSBs)")
 plt.grid(True)
 plt.show()
+'''

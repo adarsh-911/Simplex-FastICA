@@ -21,3 +21,4 @@ src/utils/cordic/internal/vec_scaling.v
 src/utils/cordic/cordic_doubly_pipe_top.v
 src/core/update/cube32.v
 src/top/update/update.v
+src/utils/zinbram.v

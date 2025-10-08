@@ -26,6 +26,8 @@ for i = 1:num_sources
   X_mat_mix(i, :) = (X_mat_mix(i, :) - mean(X_mat_mix(i, :))) / std(X_mat_mix(i, :));
 end
 
+clipped_size = 10;
+
 window_size = 1024;
 num_windows = 50;
 
@@ -36,7 +38,7 @@ for k = 1:num_windows
 
   file_name = sprintf('dataset/testVectors/channel_1/window_mix_%03d.txt', k);
 
-  dlmwrite(file_name, window_data(:), 'delimiter', '\n', 'precision', '%d');
+  dlmwrite(file_name, window_data(1:clipped_size), 'delimiter', '\n', 'precision', '%d');
 end
 
 for k = 1:num_windows
@@ -46,7 +48,7 @@ for k = 1:num_windows
 
   file_name = sprintf('dataset/testVectors/channel_2/window_mix_%03d.txt', k);
 
-  dlmwrite(file_name, window_data(:), 'delimiter', '\n', 'precision', '%d');
+  dlmwrite(file_name, window_data(1:clipped_size), 'delimiter', '\n', 'precision', '%d');
 end
 
 for k = 1:num_windows
@@ -56,7 +58,7 @@ for k = 1:num_windows
 
   file_name = sprintf('dataset/testVectors/channel_3/window_mix_%03d.txt', k);
 
-  dlmwrite(file_name, window_data(:), 'delimiter', '\n', 'precision', '%d');
+  dlmwrite(file_name, window_data(1:clipped_size), 'delimiter', '\n', 'precision', '%d');
 end
 
 for k = 1:num_windows
@@ -66,7 +68,7 @@ for k = 1:num_windows
 
   file_name = sprintf('dataset/testVectors/channel_4/window_mix_%03d.txt', k);
 
-  dlmwrite(file_name, window_data(:), 'delimiter', '\n', 'precision', '%d');
+  dlmwrite(file_name, window_data(1:clipped_size), 'delimiter', '\n', 'precision', '%d');
 end
 
 for k = 1:num_windows
@@ -76,7 +78,7 @@ for k = 1:num_windows
 
   file_name = sprintf('dataset/testVectors/channel_5/window_mix_%03d.txt', k);
 
-  dlmwrite(file_name, window_data(:), 'delimiter', '\n', 'precision', '%d');
+  dlmwrite(file_name, window_data(1:clipped_size), 'delimiter', '\n', 'precision', '%d');
 end
 
 % Plot
