@@ -206,7 +206,7 @@ initial begin
 
   $readmemh("sw-test/unit/est/_wTest.mem", temp_w);
   $readmemh("sw-test/unit/est/_zTest.mem", temp_z);
-
+  
   W_mat = temp_w[0];
   Z_in = temp_z[0];
 

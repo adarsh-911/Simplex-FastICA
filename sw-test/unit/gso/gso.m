@@ -10,6 +10,8 @@ clear;
 clc;
 format long g; % Use a nice format for displaying numbers
 
+FRAC_WIDTH = 20;
+
 % --- 1. Define the Input Vectors ---
 % Let's create a matrix 'W' where each column is a vector.
 % We will use the same W1, W2, and W3 from our previous tests.
@@ -22,6 +24,28 @@ W = [
     45, -65, 150;
     60,   5, 160
 ];
+
+W(:, 1) = randi([-100, 100], 1, size(W, 1));
+W(:, 2) = randi([-100, 100], 1, size(W, 1));
+W(:, 3) = randi([-100, 100], 1, size(W, 1));
+
+W_inp = W(:, 3) * 2^(FRAC_WIDTH);
+
+filename = sprintf('sw-test/unit/gso/_w_in.mem');
+fid = fopen(filename, 'w');
+
+hex_str1 = '';
+
+for j = 1:size(W_inp, 1)
+    val = double(W_inp(j, 1));
+    if val < 0
+        val = val + 2^(32);
+    end
+    hex_str1 = [dec2hex(val, 8), hex_str1];
+end
+
+fprintf(fid, '%s', hex_str1);
+fclose(fid);
 
 fprintf('--- Input Vectors (columns of W) ---\n');
 disp(W);
@@ -53,22 +77,57 @@ for k = 1:num_vectors
     
     % Now, v_k is orthogonal to all previous vectors.
     % We normalize it (make its length/norm = 1) and store it in Q.
-    Q(:, k) = v_k ;
+    Q(:, k) = v_k / norm(v_k);
     
 end
 
-% --- 3. Display the Final Results ---
-fprintf('\n--- Final Orthonormal Vectors (columns of Q) ---\n');
-disp(Q);
+W_gso = Q(:, 1:2);
 
-% --- Verification (Optional) ---
-% To prove the vectors are orthogonal, their dot products should be close to 0.
-fprintf('\n--- Verification Check ---\n');
-fprintf('Dot product of Q1 and Q2 should be ~0: %f\n', dot(Q(:,1), Q(:,2)));
-fprintf('Dot product of Q1 and Q3 should be ~0: %f\n', dot(Q(:,1), Q(:,3)));
-fprintf('Dot product of Q2 and Q3 should be ~0: %f\n', dot(Q(:,2), Q(:,3)));
+theta = zeros(size(W_gso, 1)-1, 2);
 
-% To prove the vectors are normalized, their length (norm) should be 1.
-fprintf('Norm of Q1 should be 1: %f\n', norm(Q(:,1)));
-fprintf('Norm of Q2 should be 1: %f\n', norm(Q(:,2)));
-fprintf('Norm of Q3 should be 1: %f\n', norm(Q(:,3)));
+for i=1:2
+  mag = W_gso(1, i);
+  for j=2:size(W_gso,1)
+    theta(j-1, 3-i) = atan2(mag, W_gso(j, i));
+    mag = sqrt(mag^2 + W_gso(j, i)^2);
+  end
+end
+
+theta(1, 2) = atan2(W_gso(2, 1), W_gso(1, 1));
+theta(1, 1) = atan2(W_gso(2, 2), W_gso(1, 2));
+
+for i = size(theta, 2):-1:1
+  for j = 1:size(theta, 1)
+    theta(j, i) = int16(theta(j, i) * 2^(15) / pi);
+  end
+end
+
+hex_str = cell(1, 2);
+hex_str(:) = {''};
+
+for i = size(theta, 2):-1:1
+  for j = 1:size(theta, 1)
+    val = double(theta(j, i));
+    if val < 0
+      val = val + 2^(16);
+    end
+    hex_str{1, i} = [dec2hex(val, 4), hex_str{1, i}];
+  end
+end
+
+disp(hex_str);
+
+filename = sprintf('sw-test/unit/gso/_thetas.mem');
+fid = fopen(filename, 'w');
+
+for col = 1:size(hex_str, 2)    
+    for row = 1:size(hex_str, 1)
+      fprintf(fid, '%s', hex_str{row, col});
+    end
+end
+
+fclose(fid);
+
+W_exp = Q(:, 3);
+
+save('sw-test/unit/gso/w_mat.mat', 'W_exp');

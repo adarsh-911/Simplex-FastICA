@@ -3,7 +3,8 @@ module gso_top #(
     parameter DATA_WIDTH    = 16,
     parameter ANGLE_WIDTH   = 16,
     parameter N_DIM         = 7,
-    parameter CORDIC_WIDTH = 22,
+    parameter FRAC_WIDTH    = 20,
+    parameter CORDIC_WIDTH  = 22,
     parameter CORDIC_STAGES = 16
 ) (
     input                                               clk,

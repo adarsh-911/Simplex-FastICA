@@ -2,11 +2,12 @@
 module gso_top_tb;
 
     // Parameters for the test
-    localparam DATA_WIDTH    = 16;
+    localparam DATA_WIDTH    = 32;
     localparam ANGLE_WIDTH   = 16;
     localparam N_DIM         = 7;
     localparam K_VECTORS     = N_DIM - 1;
-    localparam CORDIC_WIDTH  = 22;
+    localparam FRAC_WIDTH    = 20;
+    localparam CORDIC_WIDTH  = 38;
     localparam CORDIC_STAGES = 16;
 
     // Testbench Control Signals
@@ -15,7 +16,9 @@ module gso_top_tb;
     reg en;
     reg [2:0] k_in;
     reg signed [DATA_WIDTH*N_DIM-1:0] w_in_flat;
+    reg signed [DATA_WIDTH*N_DIM-1:0] w_in_temp [0:0];
     reg signed [ANGLE_WIDTH*K_VECTORS*K_VECTORS-1:0] thetas_in_flat;
+    reg signed [ANGLE_WIDTH*K_VECTORS*K_VECTORS-1:0] thetas_in_temp [0:0];
 
     // Wires to connect the GSO controller and the CORDIC block
     wire signed [DATA_WIDTH*N_DIM-1:0] w_out_flat;
@@ -30,6 +33,8 @@ module gso_top_tb;
     wire cordic_rot_angle_microRot_n;
     wire cordic_rot_microRot_ext_vld;
     wire [1:0] cordic_rot_quad_in;
+
+    integer fd;
 
     // 1. Instantiate the GSO Controller
     gso_top #(
@@ -68,7 +73,7 @@ module gso_top_tb;
     ) cordic_inst (
         .clk(clk),
         .nreset(rst_n),
-        .cordic_vec_en(1'b0), .cordic_vec_xin(16'b0), .cordic_vec_yin(16'b0), .cordic_vec_angle_calc_en(1'b0),
+        .cordic_vec_en(1'b0), .cordic_vec_xin(32'b0), .cordic_vec_yin(32'b0), .cordic_vec_angle_calc_en(1'b0),
         .cordic_rot_en(cordic_rot_en),
         .cordic_rot_xin(cordic_rot_xin_reg),
         .cordic_rot_yin(cordic_rot_yin_reg),
@@ -108,6 +113,7 @@ module gso_top_tb;
 
         // --- STEP 2: Provide custom W_in vector ---
         $display("SIM_INFO: Loading custom W_in vector.");
+        /*
         w_in_flat[(0+1)*DATA_WIDTH-1 -: DATA_WIDTH] = $signed(100);
         w_in_flat[(1+1)*DATA_WIDTH-1 -: DATA_WIDTH] = $signed(110);
         w_in_flat[(2+1)*DATA_WIDTH-1 -: DATA_WIDTH] = $signed(120);
@@ -115,9 +121,13 @@ module gso_top_tb;
         w_in_flat[(4+1)*DATA_WIDTH-1 -: DATA_WIDTH] = $signed(140);
         w_in_flat[(5+1)*DATA_WIDTH-1 -: DATA_WIDTH] = $signed(150);
         w_in_flat[(6+1)*DATA_WIDTH-1 -: DATA_WIDTH] = $signed(160);
+        */
+        $readmemh("sw-test/unit/gso/_w_in.mem", w_in_temp);
+        w_in_flat = w_in_temp[0];
 
         // --- STEP 3: Provide custom theta_in values ---
         $display("SIM_INFO: Loading custom theta values.");
+        /*
         // Thetas for Q1 (j=0)
         thetas_in_flat[(0*K_VECTORS + 0 + 1)*ANGLE_WIDTH-1 -: ANGLE_WIDTH] = $signed(16'hf081);//1a3b
         thetas_in_flat[(0*K_VECTORS + 1 + 1)*ANGLE_WIDTH-1 -: ANGLE_WIDTH] = $signed(16'h3869);//4fb1
@@ -133,6 +143,10 @@ module gso_top_tb;
         thetas_in_flat[(1*K_VECTORS + 3 + 1)*ANGLE_WIDTH-1 -: ANGLE_WIDTH] = $signed(16'h2baf); //515f
         thetas_in_flat[(1*K_VECTORS + 4 + 1)*ANGLE_WIDTH-1 -: ANGLE_WIDTH] = $signed(16'h551d);//2151
         thetas_in_flat[(1*K_VECTORS + 5 + 1)*ANGLE_WIDTH-1 -: ANGLE_WIDTH] = $signed(16'h3e73);//3ce9
+        */
+        $readmemh("sw-test/unit/gso/_thetas.mem", thetas_in_temp);
+        thetas_in_flat = thetas_in_temp[0];
+
         #10;
 
         $display("SIM_INFO: Asserting ENABLE signal...");
@@ -146,6 +160,9 @@ module gso_top_tb;
         $display("Final Q3[0] = %h", w_out_flat[DATA_WIDTH-1:0]);
         $display("Final Q3[6] = %h", w_out_flat[7*DATA_WIDTH-1 -: DATA_WIDTH]);
         #1000;
+
+        fd = $fopen("sw-test/unit/gso/out/sim.raw", "w");
+        $fwrite(fd, "%h", w_out_flat);
         $finish;
     end
 
