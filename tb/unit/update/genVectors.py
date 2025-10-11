@@ -2,11 +2,11 @@ import random
 import math
 import time
 
-N = 7
-M = 1024
+N = 5
+M = 8
 DATA_WIDTH = 32
-FRAC_WIDTH = 16
-MAKEVALUESSMALL = DATA_WIDTH-FRAC_WIDTH - 2
+FRAC_WIDTH = 20
+MAKEVALUESSMALL = DATA_WIDTH-FRAC_WIDTH-1
 
 # Precompute allowed range for signed fixed point
 MAX_VAL = (1 << (DATA_WIDTH - 1)) - 1
