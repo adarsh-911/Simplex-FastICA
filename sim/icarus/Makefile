@@ -6,11 +6,13 @@ EST_SRC_F = sim/icarus/est_rtl.f
 GSO_SRC_F = sim/icarus/gso_rtl.f
 NORM_SRC_F = sim/icarus/norm_rtl.f
 UPDATE_SRC_F = sim/icarus/updt_rtl.f
+THETA_SRC_F = sim/icarus/theta_rtl.f
 
 EST_TB_F = sim/icarus/est_tb.f
 GSO_TB_F = sim/icarus/gso_tb.f
 NORM_TB_F = sim/icarus/norm_tb.f
 UPDATE_TB_F = sim/icarus/updt_tb.f
+THETA_TB_F = sim/icarus/theta_tb.f
 
 BUILD = build/sim/icarus
 OUT   = $(BUILD)/sim.out
@@ -32,6 +34,10 @@ compile_norm:
 compile_update:
 	mkdir -p $(BUILD)
 	$(IVERILOG) -o $(OUT) -c $(UPDATE_SRC_F) -c $(UPDATE_TB_F)
+
+compile_theta:
+	mkdir -p $(BUILD)
+	$(IVERILOG) -o $(OUT) -c $(THETA_SRC_F) -c $(THETA_TB_F)
 
 run: compile
 	$(VVP) $(OUT)

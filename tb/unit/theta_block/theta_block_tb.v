@@ -1,19 +1,18 @@
 `timescale 1ns / 1ps
 module tb_process_vector;
 
-    localparam DATA_WIDTH    = 16;
+    localparam DATA_WIDTH    = 32;
     localparam ANGLE_WIDTH   = 16;
-    localparam N_DIM         = 7;
-    localparam CORDIC_WIDTH  = 22;
+    localparam N_DIM         = 5;
+    localparam CORDIC_WIDTH  = 38;
     localparam CORDIC_STAGES = 16;
     localparam CLK_PERIOD    = 10; // ns
 
-   
     reg clk;
     reg nreset;
     reg start;
     reg signed [DATA_WIDTH*N_DIM-1:0] W_tb;
-
+    reg signed [DATA_WIDTH*N_DIM-1:0] W_tb_temp [0:0];
   
     wire signed [DATA_WIDTH-1:0]  cordic_xout;
     wire signed [ANGLE_WIDTH-1:0] cordic_angle_out;
@@ -29,6 +28,7 @@ module tb_process_vector;
 
   
     integer i;
+    integer fd;
     reg signed [ANGLE_WIDTH-1:0] temp_theta;
 
 
@@ -95,7 +95,10 @@ module tb_process_vector;
         # (CLK_PERIOD);
 
         // Define the 7D test vector W = [w7, w6, w5, w4, w3, w2, w1]
-        W_tb = {16'sd1000, 16'sd500, 16'sd500, 16'sd0, 16'sd2000, 16'sd1000, 16'sd1000};
+        //W_tb = {16'sd1000, 16'sd500, 16'sd500, 16'sd0, 16'sd2000, 16'sd1000, 16'sd1000};
+        $readmemh("sw-test/unit/theta/_wTest.mem", W_tb_temp);
+        W_tb = W_tb_temp[0];
+
         $display("Applying test vector and pulsing start...");
 
         start = 1'b1;
@@ -103,6 +106,9 @@ module tb_process_vector;
         start = 1'b0;
 
         wait (done_out);
+
+        fd = $fopen("sw-test/unit/theta/out/sim.raw", "w");
+        $fwrite(fd, "%h", theta_out);
 
         # (CLK_PERIOD);
         $display("----------------------------------------------------------");

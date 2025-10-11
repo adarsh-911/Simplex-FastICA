@@ -13,6 +13,9 @@ elif [ "$1" = "update" ]; then
 elif [ "$1" = "gso" ]; then
   make compile_gso -f ./sim/icarus/Makefile
   make run_unit -f ./sim/icarus/Makefile
+elif [ "$1" = "theta" ]; then
+  make compile_theta -f ./sim/icarus/Makefile
+  make run_unit -f ./sim/icarus/Makefile
 elif [ "$1" = "run" ]; then
   make run_unit -f ./sim/icarus/Makefile
 elif [ "$1" = "wave" ]; then
