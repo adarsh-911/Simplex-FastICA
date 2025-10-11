@@ -47,7 +47,7 @@ end
 fprintf(fid, '%s', hex_str1);
 fclose(fid);
 
-fprintf('--- Input Vectors (columns of W) ---\n');
+fprintf('--- Input Vectors (W) ---\n');
 disp(W);
 
 % Get the number of vectors

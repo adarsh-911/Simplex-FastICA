@@ -212,7 +212,8 @@ initial begin
 
   #20 rstn = 1;
   #20 en = 1;
-  #(CLK_CYCLES)
+  //#(CLK_CYCLES)
+  wait(done);
   S_est_reversed = S_est;
 
   fd = $fopen("sw-test/unit/est/out/sim.raw", "w");

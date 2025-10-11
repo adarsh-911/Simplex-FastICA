@@ -8,10 +8,10 @@ module tb_5d_pipe();
     parameter ANGLE_WIDTH = 16;
     parameter CLOCK_PERIOD = 10;
     
-
     reg clk;
     reg nreset;
     reg [DIMENSIONS*DATA_WIDTH-1:0] w_in;
+    reg [DIMENSIONS*DATA_WIDTH-1:0] w_in_temp [0:0];
     reg start;
     reg [1:0] scica_stage_in;  
 
@@ -44,6 +44,7 @@ module tb_5d_pipe();
     integer cycle_count;
     integer start_cycle;
     integer end_cycle;
+    integer fd;
 
     always @(posedge clk) begin
         if (!nreset)
@@ -64,9 +65,12 @@ module tb_5d_pipe();
         scica_stage_in = 2'b01;
         #20 nreset = 1;
         //w_in = {160'hfffefffffffefffffffefffffffefffffffeffff}; 
-        w_in = {160'h0010000000100000001000000010000000100000}; 
+        //w_in = {160'h0010000000100000001000000010000000100000}; 
         //w_in = {160'hffffffffffffffffffffffffffffffffffffffff}; 
-        //w_in = {32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000}; 
+        //w_in = {32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000};
+        $readmemh("sw-test/unit/norm/_wTest.mem", w_in_temp);
+        w_in = w_in_temp[0];
+
         start = 1;
         #20 start = 0;
         start_cycle = cycle_count;  
@@ -74,6 +78,10 @@ module tb_5d_pipe();
         end_cycle = cycle_count;  
         $display("Test 1 took %0d cycles", end_cycle - start_cycle);
         #20;
+
+        fd = $fopen("sw-test/unit/norm/out/sim.raw", "w");
+        $fwrite(fd, "%h", W_out);
+        /*
         $display("Input Decimal: w4=%.6f, w3=%.6f, w2=%.6f, w1=%.6f, w0=%.6f",
          $itor($signed(w_in[159:128]))/1048576.0,
          $itor($signed(w_in[127:96]))/1048576.0,
@@ -160,6 +168,7 @@ module tb_5d_pipe();
          $itor($signed(W_out[95:64]))/1048576.0,
          $itor($signed(W_out[63:32]))/1048576.0,
          $itor($signed(W_out[31:0]))/1048576.0);
+         */
 
         // $display("Test 5: all zeroes (0,0,0,0,0)");
         // w_in = {32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000}; 
