@@ -206,7 +206,6 @@ module tb_updateTop();
         .ica_cordic_rot1_microRot_ext_in(ica_cordic_rot1_microRot_ext_in),
         .ica_cordic_rot1_microRot_ext_vld(ica_cordic_rot1_microRot_ext_vld),
         .ica_cordic_rot1_quad_in(ica_cordic_rot1_quad_in),
-        .cordic_nrst(nreset),
         .Z_in_en(Z_in_en),
         .Z_address1(Z_address1),
         .Z_address2(Z_address2),
