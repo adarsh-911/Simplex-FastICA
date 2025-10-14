@@ -42,6 +42,21 @@ module norm_5d #(
     input signed [DATA_WIDTH-1:0] cordic_rot1_yout                  
 );
 
+    reg signed [DATA_WIDTH-1:0] temp_ica_cordic_vec_xin;
+    reg signed [DATA_WIDTH-1:0] temp_ica_cordic_vec_yin;
+    reg                     temp_ica_cordic_vec_angle_calc_en;
+
+    reg signed [DATA_WIDTH-1:0] temp_ica_cordic_rot1_xin;
+    reg signed [DATA_WIDTH-1:0] temp_ica_cordic_rot1_yin;
+    reg signed [ANGLE_WIDTH-1:0] temp_ica_cordic_rot1_angle_in;
+    reg                     temp_ica_cordic_rot1_angle_microRot_n;
+    reg [CORDIC_STAGES-1:0] temp_ica_cordic_rot1_microRot_in;
+    reg [1:0]               temp_ica_cordic_rot1_quad_in;
+    reg                     temp_ica_cordic_vec_en; 
+    reg                     temp_ica_cordic_rot1_en;
+    reg temp_ica_cordic_rot1_microRot_ext_vld;
+    
+
     wire signed [DATA_WIDTH-1:0] w1, w2, w3, w4, w5;
     assign w1 = w_in[DATA_WIDTH-1:0];
     assign w2 = w_in[2*DATA_WIDTH-1:DATA_WIDTH];
@@ -97,23 +112,31 @@ module norm_5d #(
                     quad_1 <= cordic_vec_quad_out;
                     vec_x1_to_y2_ff <= cordic_vec_xout;
                     cordic_nrst <= 0;
+                    temp_ica_cordic_vec_en <= 1'b0;
+                    temp_ica_cordic_rot1_en <= 1'b0;  
                 end
                 VEC_2: begin
                     theta_2 <= cordic_vec_microRot_out;
                     quad_2 <= cordic_vec_quad_out;
                     vec_x2_to_y3_ff <= cordic_vec_xout;
                     cordic_nrst <= 0;
+                    temp_ica_cordic_vec_en <= 1'b0;
+                    temp_ica_cordic_rot1_en <= 1'b0;
                 end
                 VEC_3: begin
                     theta_3 <= cordic_vec_microRot_out;
                     quad_3 <= cordic_vec_quad_out;
                     vec_x3_to_y4_ff <= cordic_vec_xout;
                     cordic_nrst <= 0;
+                    temp_ica_cordic_vec_en <= 1'b0;
+                    temp_ica_cordic_rot1_en <= 1'b0;
                 end
                 VEC_4: begin
                     theta_4 <= cordic_vec_microRot_out;
                     quad_4 <= cordic_vec_quad_out;
                     cordic_nrst <= 0;
+                    temp_ica_cordic_vec_en <= 1'b0;
+                    temp_ica_cordic_rot1_en <= 1'b0;
                 end
             endcase
         end else if (cordic_rot1_opvld) begin
@@ -121,14 +144,20 @@ module norm_5d #(
                 ROT_1: begin
                     rot_x1_to_y2_fb <= cordic_rot1_xout;
                     cordic_nrst <= 0;
+                    temp_ica_cordic_vec_en <= 1'b0;
+                    temp_ica_cordic_rot1_en <= 1'b0;
                 end
                 ROT_2: begin
                     rot_x2_to_y3_fb <= cordic_rot1_xout;
                     cordic_nrst <= 0;
+                    temp_ica_cordic_vec_en <= 1'b0;
+                    temp_ica_cordic_rot1_en <= 1'b0;
                 end
                 ROT_3: begin
                     rot_x3_to_y4_fb <= cordic_rot1_xout;                     
-                    cordic_nrst <= 0;          
+                    cordic_nrst <= 0;
+                    temp_ica_cordic_vec_en <= 1'b0;
+                    temp_ica_cordic_rot1_en <= 1'b0;          
                 end
             endcase
         end
@@ -193,111 +222,125 @@ module norm_5d #(
     always @(posedge clk or negedge nreset) begin
         if (~nreset) begin
             current_state <= IDLE;
-            ica_cordic_rot1_angle_microRot_n <= 1'b0;
-            ica_cordic_rot1_microRot_ext_vld <= 1'b1;             // Should be HIGH for external micro-rotations
-            ica_cordic_vec_en <= 1'b0;
-            ica_cordic_rot1_en <= 1'b0;                                   
-            ica_cordic_vec_xin <= {DATA_WIDTH{1'b0}};
-            ica_cordic_vec_yin <= {DATA_WIDTH{1'b0}};
-            ica_cordic_vec_angle_calc_en <= 1'b0;                 // high to enable total angle calculation from the micro-angles
-            ica_cordic_rot1_xin <= {DATA_WIDTH{1'b0}};                     
-            ica_cordic_rot1_yin <= {DATA_WIDTH{1'b0}};                     
-            ica_cordic_rot1_microRot_in <= {CORDIC_STAGES{1'b0}};          
-            ica_cordic_rot1_quad_in <= 2'b00;
+            temp_ica_cordic_rot1_angle_microRot_n <= 1'b0;
+            temp_ica_cordic_rot1_microRot_ext_vld <= 1'b1;             // Should be HIGH for external micro-rotations
+            temp_ica_cordic_vec_en <= 1'b0;
+            temp_ica_cordic_rot1_en <= 1'b0;                                   
+            temp_ica_cordic_vec_xin <= {DATA_WIDTH{1'b0}};
+            temp_ica_cordic_vec_yin <= {DATA_WIDTH{1'b0}};
+            temp_ica_cordic_vec_angle_calc_en <= 1'b0;                 // high to enable total angle calculation from the micro-angles
+            temp_ica_cordic_rot1_xin <= {DATA_WIDTH{1'b0}};                     
+            temp_ica_cordic_rot1_yin <= {DATA_WIDTH{1'b0}};                     
+            temp_ica_cordic_rot1_microRot_in <= {CORDIC_STAGES{1'b0}};          
+            temp_ica_cordic_rot1_quad_in <= 2'b00;
             cordic_nrst <= 0;                         
         end else begin
             current_state <= next_state;
             
             case (next_state)
                 IDLE: begin
-                    ica_cordic_vec_en <= 1'b0;
-                    ica_cordic_rot1_en <= 1'b0;
+                    temp_ica_cordic_vec_en <= 1'b0;
+                    temp_ica_cordic_rot1_en <= 1'b0;
                     cordic_nrst <= 0;                        
                 end
                 VEC_1: begin
-                    ica_cordic_vec_en <= 1'b1;
-                    ica_cordic_rot1_en <= 1'b0;                           
-                    ica_cordic_vec_xin <= w1;
-                    ica_cordic_vec_yin <= w2;
-                    ica_cordic_vec_angle_calc_en <= 1'b0;                 // We only need microrotations
+                    temp_ica_cordic_vec_en <= 1'b1;
+                    temp_ica_cordic_rot1_en <= 1'b0;                           
+                    temp_ica_cordic_vec_xin <= w1;
+                    temp_ica_cordic_vec_yin <= w2;
+                    temp_ica_cordic_vec_angle_calc_en <= 1'b0;                 // We only need microrotations
                     cordic_nrst <= 1;
                 end
                 VEC_2: begin
-                    ica_cordic_vec_en <= 1'b1;
-                    ica_cordic_rot1_en <= 1'b0;                           
-                    ica_cordic_vec_xin <= w3;
-                    ica_cordic_vec_yin <= vec_x1_to_y2_ff;                 // Feed forward from previous vectoring
-                    ica_cordic_vec_angle_calc_en <= 1'b0;                  // We only need microrotations
+                    temp_ica_cordic_vec_en <= 1'b1;
+                    temp_ica_cordic_rot1_en <= 1'b0;                           
+                    temp_ica_cordic_vec_xin <= w3;
+                    temp_ica_cordic_vec_yin <= vec_x1_to_y2_ff;                 // Feed forward from previous vectoring
+                    temp_ica_cordic_vec_angle_calc_en <= 1'b0;                  // We only need microrotations
                     cordic_nrst <= 1;
                 end
                 VEC_3: begin
-                    ica_cordic_vec_en <= 1'b1;
-                    ica_cordic_rot1_en <= 1'b0;                           
-                    ica_cordic_vec_xin <= w4;
-                    ica_cordic_vec_yin <= vec_x2_to_y3_ff;                 // Feed forward from previous vectoring
-                    ica_cordic_vec_angle_calc_en <= 1'b0;                  // We only need microrotations
+                    temp_ica_cordic_vec_en <= 1'b1;
+                    temp_ica_cordic_rot1_en <= 1'b0;                           
+                    temp_ica_cordic_vec_xin <= w4;
+                    temp_ica_cordic_vec_yin <= vec_x2_to_y3_ff;                 // Feed forward from previous vectoring
+                    temp_ica_cordic_vec_angle_calc_en <= 1'b0;                  // We only need microrotations
                     cordic_nrst <= 1;
                 end
                 VEC_4: begin
-                    ica_cordic_vec_en <= 1'b1;
-                    ica_cordic_rot1_en <= 1'b0;
-                    ica_cordic_vec_xin <= w5;
-                    ica_cordic_vec_yin <= vec_x3_to_y4_ff;
-                    ica_cordic_vec_angle_calc_en <= 1'b0;
+                    temp_ica_cordic_vec_en <= 1'b1;
+                    temp_ica_cordic_rot1_en <= 1'b0;
+                    temp_ica_cordic_vec_xin <= w5;
+                    temp_ica_cordic_vec_yin <= vec_x3_to_y4_ff;
+                    temp_ica_cordic_vec_angle_calc_en <= 1'b0;
                     cordic_nrst <= 1;
                 end
                 ROT_1: begin
                     cordic_nrst <= 1;
-                    ica_cordic_rot1_angle_microRot_n <= 1'b0;     // Use micro-rotations
-                    ica_cordic_rot1_microRot_ext_vld <= 1'b1;     // External micro-rotations   
-                    ica_cordic_vec_en <= 1'b0;
-                    ica_cordic_rot1_en <= 1'b1;                           
-                    ica_cordic_rot1_xin <= x_zero;                         
-                    ica_cordic_rot1_yin <= y_one;                          
-                    ica_cordic_rot1_microRot_in <= theta_4;                
-                    ica_cordic_rot1_quad_in  <= quad_4;                   
+                    temp_ica_cordic_rot1_angle_microRot_n <= 1'b0;     // Use micro-rotations
+                    temp_ica_cordic_rot1_microRot_ext_vld <= 1'b1;     // External micro-rotations   
+                    temp_ica_cordic_vec_en <= 1'b0;
+                    temp_ica_cordic_rot1_en <= 1'b1;                           
+                    temp_ica_cordic_rot1_xin <= x_zero;                         
+                    temp_ica_cordic_rot1_yin <= y_one;                          
+                    temp_ica_cordic_rot1_microRot_in <= theta_4;                
+                    temp_ica_cordic_rot1_quad_in  <= quad_4;                   
                 end
                 ROT_2: begin
                     cordic_nrst <= 1;
-                    ica_cordic_rot1_angle_microRot_n <= 1'b0;     // Use micro-rotations
-                    ica_cordic_rot1_microRot_ext_vld <= 1'b1;     // External micro-rotations   
-                    ica_cordic_vec_en <= 1'b0;
-                    ica_cordic_rot1_en <= 1'b1;                           
-                    ica_cordic_rot1_xin <= x_zero;                         
-                    ica_cordic_rot1_yin <= rot_x1_to_y2_fb;  // Feedback from previous rotation
-                    ica_cordic_rot1_microRot_in <= theta_3;                
-                    ica_cordic_rot1_quad_in  <= quad_3;                   
+                    temp_ica_cordic_rot1_angle_microRot_n <= 1'b0;     // Use micro-rotations
+                    temp_ica_cordic_rot1_microRot_ext_vld <= 1'b1;     // External micro-rotations   
+                    temp_ica_cordic_vec_en <= 1'b0;
+                    temp_ica_cordic_rot1_en <= 1'b1;                           
+                    temp_ica_cordic_rot1_xin <= x_zero;                         
+                    temp_ica_cordic_rot1_yin <= rot_x1_to_y2_fb;  // Feedback from previous rotation
+                    temp_ica_cordic_rot1_microRot_in <= theta_3;                
+                    temp_ica_cordic_rot1_quad_in  <= quad_3;                   
                 end
                 ROT_3: begin
                     cordic_nrst <= 1;
-                    ica_cordic_rot1_angle_microRot_n <= 1'b0;     // Use micro-rotations
-                    ica_cordic_rot1_microRot_ext_vld <= 1'b1;     // External micro-rotations   
-                    ica_cordic_vec_en <= 1'b0;
-                    ica_cordic_rot1_en <= 1'b1;                           
-                    ica_cordic_rot1_xin <= x_zero;                         
-                    ica_cordic_rot1_yin <= rot_x2_to_y3_fb;  // Feedback from previous rotation
-                    ica_cordic_rot1_microRot_in <= theta_2;                
-                    ica_cordic_rot1_quad_in  <= quad_2;                   
+                    temp_ica_cordic_rot1_angle_microRot_n <= 1'b0;     // Use micro-rotations
+                    temp_ica_cordic_rot1_microRot_ext_vld <= 1'b1;     // External micro-rotations   
+                    temp_ica_cordic_vec_en <= 1'b0;
+                    temp_ica_cordic_rot1_en <= 1'b1;                           
+                    temp_ica_cordic_rot1_xin <= x_zero;                         
+                    temp_ica_cordic_rot1_yin <= rot_x2_to_y3_fb;  // Feedback from previous rotation
+                    temp_ica_cordic_rot1_microRot_in <= theta_2;                
+                    temp_ica_cordic_rot1_quad_in  <= quad_2;                   
                 end
                 ROT_4: begin
                     cordic_nrst <= 1;
-                    ica_cordic_rot1_angle_microRot_n <= 1'b0;
-                    ica_cordic_rot1_microRot_ext_vld <= 1'b1;     // External micro-rotations   
-                    ica_cordic_vec_en <= 1'b0;
-                    ica_cordic_rot1_en <= 1'b1;                           
-                    ica_cordic_rot1_xin <= x_zero;                         
-                    ica_cordic_rot1_yin <= rot_x3_to_y4_fb;  // Feedback from previous rotation
-                    ica_cordic_rot1_microRot_in <= theta_1;                
-                    ica_cordic_rot1_quad_in  <= quad_1;                   
+                    temp_ica_cordic_rot1_angle_microRot_n <= 1'b0;
+                    temp_ica_cordic_rot1_microRot_ext_vld <= 1'b1;     // External micro-rotations   
+                    temp_ica_cordic_vec_en <= 1'b0;
+                    temp_ica_cordic_rot1_en <= 1'b1;                           
+                    temp_ica_cordic_rot1_xin <= x_zero;                         
+                    temp_ica_cordic_rot1_yin <= rot_x3_to_y4_fb;  // Feedback from previous rotation
+                    temp_ica_cordic_rot1_microRot_in <= theta_1;                
+                    temp_ica_cordic_rot1_quad_in  <= quad_1;                   
                 end
                 DONE: begin
-                    ica_cordic_vec_en <= 1'b0;
-                    ica_cordic_rot1_en <= 1'b0;                      
+                    temp_ica_cordic_vec_en <= 1'b0;
+                    temp_ica_cordic_rot1_en <= 1'b0;                      
                 end
             endcase
         end
+
+        ica_cordic_vec_xin <= temp_ica_cordic_vec_xin;
+        ica_cordic_vec_yin <= temp_ica_cordic_vec_yin;
+        ica_cordic_vec_angle_calc_en <= temp_ica_cordic_vec_angle_calc_en;
+        ica_cordic_rot1_xin <= temp_ica_cordic_rot1_xin;
+        ica_cordic_rot1_yin <= temp_ica_cordic_rot1_yin;
+        //ica_cordic_rot1_angle_in <= temp_ica_cordic_rot1_angle_in;
+        ica_cordic_rot1_angle_microRot_n <= temp_ica_cordic_rot1_angle_microRot_n;
+        ica_cordic_rot1_microRot_in <= temp_ica_cordic_rot1_microRot_in;
+        ica_cordic_rot1_quad_in <= temp_ica_cordic_rot1_quad_in;
+        ica_cordic_vec_en <= temp_ica_cordic_vec_en;
+        ica_cordic_rot1_en <= temp_ica_cordic_rot1_en;
+        ica_cordic_rot1_microRot_ext_vld <= temp_ica_cordic_rot1_microRot_ext_vld;
     end
 
     assign done = (current_state == DONE);
+    
 
 endmodule

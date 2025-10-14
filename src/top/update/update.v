@@ -46,6 +46,22 @@ module updateTop #(
     output reg                     output_valid
 );
 
+    // Temp reg
+    reg signed [DATA_WIDTH-1:0] temp_ica_cordic_vec_xin;
+    reg signed [DATA_WIDTH-1:0] temp_ica_cordic_vec_yin;
+    reg                     temp_ica_cordic_vec_angle_calc_en;
+
+    reg signed [DATA_WIDTH-1:0] temp_ica_cordic_rot1_xin;
+    reg signed [DATA_WIDTH-1:0] temp_ica_cordic_rot1_yin;
+    reg signed [ANGLE_WIDTH-1:0] temp_ica_cordic_rot1_angle_in;
+    reg                     temp_ica_cordic_rot1_angle_microRot_n;
+    reg [CORDIC_STAGES-1:0] temp_ica_cordic_rot1_microRot_ext_in;
+    reg [1:0]               temp_ica_cordic_rot1_quad_in;
+    reg                     temp_ica_cordic_vec_en; 
+    reg                     temp_ica_cordic_rot1_en;
+    reg temp_ica_cordic_rot1_microRot_ext_vld;
+
+
     // G_kin cube latched for processing
     reg [M*DATA_WIDTH-1:0]         G_kin_cube;
     // Norm of G^3
@@ -132,18 +148,18 @@ module updateTop #(
             Ncounter <= 0;
             Mcounter <= 0;
             stage_counter <= 2'b00;
-            ica_cordic_vec_en <= 1'b0;
-            ica_cordic_vec_xin <= {DATA_WIDTH{1'b0}};
-            ica_cordic_vec_yin <= {DATA_WIDTH{1'b0}};
-            ica_cordic_vec_angle_calc_en <= 1'b0;
-            ica_cordic_rot1_en <= 1'b0;
-            ica_cordic_rot1_xin <= {DATA_WIDTH{1'b0}};
-            ica_cordic_rot1_yin <= {DATA_WIDTH{1'b0}};
-            ica_cordic_rot1_angle_in <= {ANGLE_WIDTH{1'b0}};
-            ica_cordic_rot1_angle_microRot_n <= 1'b0;
-            ica_cordic_rot1_microRot_ext_in <= {CORDIC_STAGES{1'b0}};
-            ica_cordic_rot1_microRot_ext_vld <= 1'b0;
-            ica_cordic_rot1_quad_in <= 2'b00;
+            temp_ica_cordic_vec_en <= 1'b0;
+            temp_ica_cordic_vec_xin <= {DATA_WIDTH{1'b0}};
+            temp_ica_cordic_vec_yin <= {DATA_WIDTH{1'b0}};
+            temp_ica_cordic_vec_angle_calc_en <= 1'b0;
+            temp_ica_cordic_rot1_en <= 1'b0;
+            temp_ica_cordic_rot1_xin <= {DATA_WIDTH{1'b0}};
+            temp_ica_cordic_rot1_yin <= {DATA_WIDTH{1'b0}};
+            temp_ica_cordic_rot1_angle_in <= {ANGLE_WIDTH{1'b0}};
+            temp_ica_cordic_rot1_angle_microRot_n <= 1'b0;
+            temp_ica_cordic_rot1_microRot_ext_in <= {CORDIC_STAGES{1'b0}};
+            temp_ica_cordic_rot1_microRot_ext_vld <= 1'b0;
+            temp_ica_cordic_rot1_quad_in <= 2'b00;
             W_out <= {(N*DATA_WIDTH){1'b0}};
             output_valid <= 1'b0;
             cuber_start <= 1'b0;
@@ -154,8 +170,8 @@ module updateTop #(
             Z_address1 <= 0;
             Z_address2 <= 0;
         end else if (en) begin
-            ica_cordic_vec_en <= 1'b0;
-            ica_cordic_rot1_en <= 1'b0;
+            temp_ica_cordic_vec_en <= 1'b0;
+            temp_ica_cordic_rot1_en <= 1'b0;
             output_valid <= 1'b0;
             cuber_start <= 1'b0;
             Z_in_en <= 1'b0;
@@ -179,35 +195,35 @@ module updateTop #(
             case (stage_counter)
                 2'b00: begin
                     if (cordic_vec_microRot_out_start) begin
-                        ica_cordic_rot1_en <= 1'b1;
-                        ica_cordic_rot1_xin <= Z_0;
-                        ica_cordic_rot1_yin <= ncounter_eq_1 ? Z_1 : cordic_rot1_xout;
-                        ica_cordic_rot1_angle_in <= {ANGLE_WIDTH{1'b0}};
-                        ica_cordic_rot1_angle_microRot_n <= 1'b0;
-                        ica_cordic_rot1_microRot_ext_in <= {CORDIC_STAGES{1'b0}};
-                        ica_cordic_rot1_microRot_ext_vld <= 1'b0;
-                        ica_cordic_rot1_quad_in <= cordic_vec_quad_out;
+                        temp_ica_cordic_rot1_en <= 1'b1;
+                        temp_ica_cordic_rot1_xin <= Z_0;
+                        temp_ica_cordic_rot1_yin <= ncounter_eq_1 ? Z_1 : cordic_rot1_xout;
+                        temp_ica_cordic_rot1_angle_in <= {ANGLE_WIDTH{1'b0}};
+                        temp_ica_cordic_rot1_angle_microRot_n <= 1'b0;
+                        temp_ica_cordic_rot1_microRot_ext_in <= {CORDIC_STAGES{1'b0}};
+                        temp_ica_cordic_rot1_microRot_ext_vld <= 1'b0;
+                        temp_ica_cordic_rot1_quad_in <= cordic_vec_quad_out;
                     end
                     if (ncounter_le_n2) begin
                         if (ncounter_eq_0) begin
-                            ica_cordic_vec_en <= 1'b1;
-                            ica_cordic_vec_xin <= W_wire[0];
-                            ica_cordic_vec_yin <= W_wire[1];
+                            temp_ica_cordic_vec_en <= 1'b1;
+                            temp_ica_cordic_vec_xin <= W_wire[0];
+                            temp_ica_cordic_vec_yin <= W_wire[1];
                             Z_address1 <= Mcounter*N + 0;
                             Z_address2 <= Mcounter*N + 1;
                             Z_in_en <= 1'b1; // as long as bram latency is less than cordic microrotstart latency (2 cycles)
 
-                            ica_cordic_vec_angle_calc_en <= 1'b1;
+                            temp_ica_cordic_vec_angle_calc_en <= 1'b1;
                             Ncounter <= Ncounter + 1;
                         end
                         else if (cordic_rot1_opvld == 1) begin
-                            ica_cordic_vec_en <= 1'b1;
-                            ica_cordic_vec_xin <= W_wire[Ncounter+1];
-                            ica_cordic_vec_yin <= cordic_vec_xout;
+                            temp_ica_cordic_vec_en <= 1'b1;
+                            temp_ica_cordic_vec_xin <= W_wire[Ncounter+1];
+                            temp_ica_cordic_vec_yin <= cordic_vec_xout;
                             Z_address1 <= Mcounter*N + Ncounter + 1;
                             Z_in_en <= 1'b1; // as long as bram latency is less than cordic microrotstart latency (2 cycles)
                             
-                            ica_cordic_vec_angle_calc_en <= 1'b1;
+                            temp_ica_cordic_vec_angle_calc_en <= 1'b1;
                             Ncounter <= Ncounter + 1;
                         end
                     end
@@ -228,17 +244,17 @@ module updateTop #(
                 end
                 2'b01: begin // precision losing step, but unavoidable
                     if (mcounter_eq_0) begin
-                        ica_cordic_vec_en <= 1'b1;
-                        ica_cordic_vec_xin <= G_wire[0];
-                        ica_cordic_vec_yin <= G_wire[1];
-                        ica_cordic_vec_angle_calc_en <= 1'b0;
+                        temp_ica_cordic_vec_en <= 1'b1;
+                        temp_ica_cordic_vec_xin <= G_wire[0];
+                        temp_ica_cordic_vec_yin <= G_wire[1];
+                        temp_ica_cordic_vec_angle_calc_en <= 1'b0;
                         Mcounter <= Mcounter + 1;
                     end
                     else if (mcounter_lt_m1 && cordic_vec_opvld == 1) begin
-                        ica_cordic_vec_en <= 1'b1;
-                        ica_cordic_vec_xin <= G_wire[Mcounter+1];
-                        ica_cordic_vec_yin <= cordic_vec_xout;
-                        ica_cordic_vec_angle_calc_en <= 1'b0;
+                        temp_ica_cordic_vec_en <= 1'b1;
+                        temp_ica_cordic_vec_xin <= G_wire[Mcounter+1];
+                        temp_ica_cordic_vec_yin <= cordic_vec_xout;
+                        temp_ica_cordic_vec_angle_calc_en <= 1'b0;
                         Mcounter <= Mcounter + 1;
                     end
                     else if (mcounter_eq_m1 && cordic_vec_opvld == 1) begin
@@ -249,38 +265,38 @@ module updateTop #(
                 end
                 2'b10: begin
                     if (cordic_vec_microRot_out_start) begin
-                        ica_cordic_rot1_en <= 1'b1;
-                        ica_cordic_rot1_xin <= mcounter_eq_1 ? ZG1 >>> FRAC_WIDTH : ZG2 >>> FRAC_WIDTH;
+                        temp_ica_cordic_rot1_en <= 1'b1;
+                        temp_ica_cordic_rot1_xin <= mcounter_eq_1 ? ZG1 >>> FRAC_WIDTH : ZG2 >>> FRAC_WIDTH;
                         // ZG1 definition (Z_wire[(Mcounter-1)*N + Ncounter] * G_norm_cube);
-                        ica_cordic_rot1_yin <= mcounter_eq_1 ? (ZG2) >>> FRAC_WIDTH : cordic_rot1_xout;
-                        ica_cordic_rot1_angle_in <= {ANGLE_WIDTH{1'b0}};
-                        ica_cordic_rot1_angle_microRot_n <= 1'b0;
-                        ica_cordic_rot1_microRot_ext_in <= {CORDIC_STAGES{1'b0}};
-                        ica_cordic_rot1_microRot_ext_vld <= 1'b0;
-                        ica_cordic_rot1_quad_in <= cordic_vec_quad_out;
+                        temp_ica_cordic_rot1_yin <= mcounter_eq_1 ? (ZG2) >>> FRAC_WIDTH : cordic_rot1_xout;
+                        temp_ica_cordic_rot1_angle_in <= {ANGLE_WIDTH{1'b0}};
+                        temp_ica_cordic_rot1_angle_microRot_n <= 1'b0;
+                        temp_ica_cordic_rot1_microRot_ext_in <= {CORDIC_STAGES{1'b0}};
+                        temp_ica_cordic_rot1_microRot_ext_vld <= 1'b0;
+                        temp_ica_cordic_rot1_quad_in <= cordic_vec_quad_out;
                     end
                     if (mcounter_le_m2) begin
                         if (mcounter_eq_0) begin
-                            ica_cordic_vec_en <= 1'b1;
-                            ica_cordic_vec_xin <= G_wire[0];
-                            ica_cordic_vec_yin <= G_wire[1];
+                            temp_ica_cordic_vec_en <= 1'b1;
+                            temp_ica_cordic_vec_xin <= G_wire[0];
+                            temp_ica_cordic_vec_yin <= G_wire[1];
                             Z_address1 <= Mcounter*N + Ncounter;
                             Z_address2 <= (Mcounter+1)*N + Ncounter;
                             Z_in_en <= 1'b1; // as long as bram latency is less than cordic microrotstart latency (2 cycles)
 
-                            ica_cordic_vec_angle_calc_en <= 1'b0;
+                            temp_ica_cordic_vec_angle_calc_en <= 1'b0;
                             Mcounter <= Mcounter + 1;
                         end
                         else if (cordic_rot1_opvld == 1) begin
-                            ica_cordic_vec_en <= 1'b1;
-                            ica_cordic_vec_xin <= G_wire[Mcounter+1];
-                            ica_cordic_vec_yin <= cordic_vec_xout;
+                            temp_ica_cordic_vec_en <= 1'b1;
+                            temp_ica_cordic_vec_xin <= G_wire[Mcounter+1];
+                            temp_ica_cordic_vec_yin <= cordic_vec_xout;
                             
                             Z_address1 <= Mcounter*N + Ncounter;
                             Z_address2 <= (Mcounter+1)*N + Ncounter;
                             Z_in_en <= 1'b1; // as long as bram latency is less than cordic microrotstart latency (2 cycles)
 
-                            ica_cordic_vec_angle_calc_en <= 1'b0;
+                            temp_ica_cordic_vec_angle_calc_en <= 1'b0;
                             Mcounter <= Mcounter + 1;
                         end
                     end
@@ -307,21 +323,34 @@ module updateTop #(
             endcase
         end
         else begin
-            ica_cordic_vec_en                <= 1'b0;
-            ica_cordic_vec_xin               <= {DATA_WIDTH{1'b0}};
-            ica_cordic_vec_yin               <= {DATA_WIDTH{1'b0}};
-            ica_cordic_vec_angle_calc_en     <= 1'b0;
-            ica_cordic_rot1_en               <= 1'b0;
-            ica_cordic_rot1_xin              <= {DATA_WIDTH{1'b0}};
-            ica_cordic_rot1_yin              <= {DATA_WIDTH{1'b0}};
-            ica_cordic_rot1_angle_in         <= {ANGLE_WIDTH{1'b0}};
-            ica_cordic_rot1_angle_microRot_n <= 1'b0;
-            ica_cordic_rot1_microRot_ext_in  <= {CORDIC_STAGES{1'b0}};
-            ica_cordic_rot1_microRot_ext_vld <= 1'b0;
-            ica_cordic_rot1_quad_in          <= 2'b00;
+            temp_ica_cordic_vec_en                <= 1'b0;
+            temp_ica_cordic_vec_xin               <= {DATA_WIDTH{1'b0}};
+            temp_ica_cordic_vec_yin               <= {DATA_WIDTH{1'b0}};
+            temp_ica_cordic_vec_angle_calc_en     <= 1'b0;
+            temp_ica_cordic_rot1_en               <= 1'b0;
+            temp_ica_cordic_rot1_xin              <= {DATA_WIDTH{1'b0}};
+            temp_ica_cordic_rot1_yin              <= {DATA_WIDTH{1'b0}};
+            temp_ica_cordic_rot1_angle_in         <= {ANGLE_WIDTH{1'b0}};
+            temp_ica_cordic_rot1_angle_microRot_n <= 1'b0;
+            temp_ica_cordic_rot1_microRot_ext_in  <= {CORDIC_STAGES{1'b0}};
+            temp_ica_cordic_rot1_microRot_ext_vld <= 1'b0;
+            temp_ica_cordic_rot1_quad_in          <= 2'b00;
             W_out                            <= {(N*DATA_WIDTH){1'b0}};
             output_valid                     <= 1'b0;
         end
+
+        ica_cordic_vec_xin <= temp_ica_cordic_vec_xin;
+        ica_cordic_vec_yin <= temp_ica_cordic_vec_yin;
+        ica_cordic_vec_angle_calc_en <= temp_ica_cordic_vec_angle_calc_en;
+        ica_cordic_rot1_xin <= temp_ica_cordic_rot1_xin;
+        ica_cordic_rot1_yin <= temp_ica_cordic_rot1_yin;
+        ica_cordic_rot1_angle_in <= temp_ica_cordic_rot1_angle_in;
+        ica_cordic_rot1_angle_microRot_n <= temp_ica_cordic_rot1_angle_microRot_n;
+        ica_cordic_rot1_microRot_ext_in <= temp_ica_cordic_rot1_microRot_ext_in;
+        ica_cordic_rot1_quad_in <= temp_ica_cordic_rot1_quad_in;
+        ica_cordic_vec_en <= temp_ica_cordic_vec_en;
+        ica_cordic_rot1_en <= temp_ica_cordic_rot1_en;
+        ica_cordic_rot1_microRot_ext_vld <= temp_ica_cordic_rot1_microRot_ext_vld;
     end
 
 endmodule

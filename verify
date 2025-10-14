@@ -27,4 +27,5 @@ elif [ "$1" = "update" ]; then
   python3 sw-test/unit/updt/genVectors.py
   echo "-----------------------------------------------------------------------------------------------------------------"
   ./simulate update
+  python3 sw-test/unit/updt/updtCheck.py
 fi

@@ -3,9 +3,9 @@ import math
 import time
 
 N = 5
-M = 1024
+M = 8
 DATA_WIDTH = 32
-FRAC_WIDTH = 16
+FRAC_WIDTH = 20
 MAKEVALUESSMALL = DATA_WIDTH-FRAC_WIDTH - 2
 
 # Precompute allowed range for signed fixed point

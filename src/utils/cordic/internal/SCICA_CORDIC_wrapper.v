@@ -121,9 +121,12 @@ module SCICA_CORDIC_wrapper #(
         end                
         
         else begin
-            cordic_rot1_en <= evd_cordic_rot1_en || ica_cordic_rot1_en || fft_cordic_rot_en;
-            cordic_vec_en <= evd_cordic_vec_en || ica_cordic_vec_en || kmeans_cordic_vec_en;
-            cordic_rot2_en <= evd_cordic_rot2_en || ica_cordic_rot2_en;
+            // cordic_rot1_en <= evd_cordic_rot1_en || ica_cordic_rot1_en || fft_cordic_rot_en;
+            // cordic_vec_en <= evd_cordic_vec_en || ica_cordic_vec_en || kmeans_cordic_vec_en;
+            // cordic_rot2_en <= evd_cordic_rot2_en || ica_cordic_rot2_en;
+            cordic_rot1_en <= ica_cordic_rot1_en;
+            cordic_vec_en <= ica_cordic_vec_en;
+            cordic_rot2_en <= ica_cordic_rot2_en;
         end
     end                                            
     

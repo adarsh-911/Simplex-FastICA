@@ -68,6 +68,8 @@ module tb_5d_pipe();
         //w_in = {160'h0010000000100000001000000010000000100000}; 
         //w_in = {160'hffffffffffffffffffffffffffffffffffffffff}; 
         //w_in = {32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000};
+        //$dumpfile("build/sim/icarus/dump.vcd");
+        //$dumpvars(0, tb_5d_pipe);
         $readmemh("sw-test/unit/norm/_wTest.mem", w_in_temp);
         w_in = w_in_temp[0];
 
@@ -231,6 +233,7 @@ module tb_5d_pipe();
         .ica_cordic_rot1_angle_microRot_n(ica_cordic_rot1_angle_microRot_n),
         .ica_cordic_rot1_microRot_ext_vld(ica_cordic_rot1_microRot_ext_vld)
     );
+    /*
 
     SCICA_CORDIC_wrapper #(
         .DATA_WIDTH(DATA_WIDTH),
@@ -288,7 +291,43 @@ module tb_5d_pipe();
         .cordic_rot1_xout(cordic_rot1_xout),
         .cordic_rot1_yout(cordic_rot1_yout)
     );
+    */
 
+    CORDIC_doubly_pipe_top #(
+        .DATA_WIDTH(DATA_WIDTH),
+        .CORDIC_WIDTH(CORDIC_WIDTH),
+        .ANGLE_WIDTH(ANGLE_WIDTH),
+        .CORDIC_STAGES(CORDIC_STAGES)
+    ) u_cordic (
+        .clk(clk),
+        .nreset(cordic_nrst),
+
+        .cordic_vec_en(ica_cordic_vec_en),
+        .cordic_vec_xin(ica_cordic_vec_xin),
+        .cordic_vec_yin(ica_cordic_vec_yin),
+        .cordic_vec_angle_calc_en(ica_cordic_vec_angle_calc_en),
+
+        .cordic_rot_en(ica_cordic_rot1_en),
+        .cordic_rot_xin(ica_cordic_rot1_xin),
+        .cordic_rot_yin(ica_cordic_rot1_yin),
+        .cordic_rot_angle_microRot_n(ica_cordic_rot1_angle_microRot_n),
+        .cordic_rot_angle_in({ANGLE_WIDTH{1'b0}}),
+        .cordic_rot_microRot_ext_in(ica_cordic_rot1_microRot_in),
+        .cordic_rot_microRot_ext_vld(ica_cordic_rot1_microRot_ext_vld),
+        .cordic_rot_quad_in(ica_cordic_rot1_quad_in),
+
+        .cordic_vec_opvld(cordic_vec_opvld),
+        .cordic_vec_xout(cordic_vec_xout),
+        .vec_quad(cordic_vec_quad_out),
+        .vec_angle_out(cordic_vec_angle_out),
+        .vec_microRot_dir(cordic_vec_microRot_out),
+        .vec_microRot_out_start(cordic_vec_microRot_out_start),
+
+        .cordic_rot_opvld(cordic_rot1_opvld),
+        .cordic_rot_xout(cordic_rot1_xout),
+        .cordic_rot_yout(cordic_rot1_yout)
+        );
+    
   initial begin
     $dumpfile("build/sim/icarus/dump.vcd");
     $dumpvars(0, tb_5d_pipe);
